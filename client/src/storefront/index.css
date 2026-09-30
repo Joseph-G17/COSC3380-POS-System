@@ -1,1 +1,32 @@
 @import "tailwindcss";
+nav{
+    display: flex;
+    
+}
+
+.store-name{
+    margin-right: 2%;
+}
+
+.search-bar{
+    margin-right: 2%;
+    width: 60%;
+    border: solid 1px black;
+}
+
+.search-bar input{
+    width: 100%;
+    border: none;
+}
+
+.cart{
+    margin-right: 2%;
+}
+
+button{
+    border: solid 1px black;
+}
+
+.signup-button{
+    margin-right: 10px;
+}
