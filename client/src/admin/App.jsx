@@ -1,31 +1,18 @@
-import axios from 'axios';
-import { useState, useEffect } from 'react'
 import { Route, createBrowserRouter, createRoutesFromElements, RouterProvider} from 'react-router-dom'
 
+import AdminMainLayout from './layouts/AdminMainLayout';
+import HomePage from './pages/HomePage';
+
 const App = () => {
-  const [count, setCount] = useState(0);
-  const [array, setArray] = useState([]);
-
-  const fetchAPI = async () => {
-    const response = await axios.get("http://localhost:8080/api");
-    setArray(response.data.users);
-    console.log(response.data.users);
-  };
-
-  useEffect(() => {
-    fetchAPI();
-  }, []); //runs on end of inital render of this component
-
-  return (  
-    <div>App
-      { array.map((user, index)=> (  
-        <div key={index}>
-          <p>{user}</p>
-          <br></br>
-        </div>
-      ))}
-    </div>
-  )
+  const router = createBrowserRouter(
+    createRoutesFromElements(
+      <Route path='/admin' element={<AdminMainLayout /> }>
+        <Route index element={<HomePage /> } />
+      </Route>
+    )
+  );
+  
+  return <RouterProvider router={router}/>
 }
 
 export default App
