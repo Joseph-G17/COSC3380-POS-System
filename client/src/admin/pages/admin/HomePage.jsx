@@ -2,8 +2,8 @@ import React from 'react'
 
 const HomePage = () => {
   return (
-    <div>
-      TEST MAIN PAGE INFO
+    <div className='border-2'>
+      MAIN PAGE
     </div>
   )
 }
