@@ -1,1 +1,10 @@
+@import url('https://googleapis.com');
 @import "tailwindcss";
+
+body {
+    font-family: 'Outfit', sans-serif;
+}
+
+* {
+    text-wrap: nowrap;
+}
