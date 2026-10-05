@@ -1,32 +1,277 @@
+/*
+ * Storefront styles
+ *
+ * main.jsx imports this file, so these styles are loaded for the storefront.
+ * Navbar.jsx gives each part a className. The matching CSS selector below
+ * decides how that part looks and where it goes.
+ * Example: className="store-name" in JSX matches .store-name in this file.
+ *
+ * Layout plan:
+ * - Above 800px: store name, search, cart, and account buttons share one row.
+ * - At 800px or less: search moves to the second row. Cart and avatar stay right.
+ * - At 480px or less: use smaller gaps and less space around the navbar.
+ *
+ * Rules outside @media are the starting styles. A matching @media block can
+ * change some of them. It is similar to applying changes inside an if condition.
+ * CSS handles screen size here. It does not check whether a customer is logged in.
+ */
+
+/* Load Tailwind CSS, including its starting styles for HTML elements. */
 @import "tailwindcss";
-nav{
-    display: flex;
-    
+
+/*
+ * The <nav> element is the outer box of our navbar.
+ * This selector applies to any <nav> using this stylesheet.
+ * Grid divides this box into rows and columns so we can place each part.
+ */
+nav {
+    display: grid;
+
+    /* These names describe the four positions in the wide-screen row. */
+    grid-template-areas: "brand search cart auth";
+
+    /*
+     * auto lets the name, cart, and account columns use the space they need.
+     * 1fr gives the search column the remaining space.
+     * minmax(0, 1fr) allows that column to become smaller when space is limited.
+     */
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+
+    /* Keep the parts lined up vertically, even if they have different heights. */
+    align-items: center;
+
+    /* gap is the space BETWEEN grid items: 16px in both directions. */
+    gap: 16px;
+
+    /* padding is space INSIDE the navbar: 16px top/bottom, 24px left/right. */
+    padding: 16px 24px;
 }
 
-.store-name{
-    margin-right: 2%;
+/* The dot means this selector targets the class named store-name. */
+.store-name {
+    /* Put the store name in the grid position called brand. */
+    grid-area: brand;
+
+    /* Allow this box to shrink instead of forcing the navbar wider. */
+    min-width: 0;
 }
 
-.search-bar{
-    margin-right: 2%;
-    width: 60%;
-    border: solid 1px black;
-}
+/* This is the outer border around the search input. */
+.search-bar {
+    grid-area: search;
 
-.search-bar input{
+    /* Fill the available search column, but stop growing at 640px. */
     width: 100%;
+    max-width: 640px;
+    min-width: 0;
+
+    /*
+     * Center the whole search BOX inside its grid area.
+     * On small screens, that area covers the full navbar row.
+     * On wide screens, it is the space between the name and cart.
+     */
+    justify-self: center;
+
+    /* Keep the gray border and make both ends fully rounded, like a pill. */
+    border: 1px solid gray;
+    border-radius: 999px;
+}
+
+/* The space between the selectors means: an input INSIDE .search-bar. */
+.search-bar input {
+    /* Fill the inside of the search box and allow it to shrink with the box. */
+    width: 100%;
+    min-width: 0;
+
+    /* Leave space between the text and border: 10px top/bottom, 14px left/right. */
+    padding: 10px 14px;
+
+    /* The outer .search-bar already has a border. Avoid drawing a second one. */
     border: none;
+
+    /* inherit uses the outer search box's radius for the input corners too. */
+    border-radius: inherit;
+
+    /* Center the TEXT, including the hint and what the customer types. */
+    text-align: center;
 }
 
-.cart{
-    margin-right: 2%;
+/* Give the cart its own circular frame beside the account controls. */
+.cart {
+    grid-area: cart;
+
+    /* Keep a 40px square, similar in size to the avatar button. */
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+
+    /* Center the cart icon inside its box. */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    /* Use the same gray border as the search box for a lighter outline. */
+    border: 1px solid gray;
+
+    /* The box is 40px by 40px, so 50% rounded corners make it a circle. */
+    border-radius: 50%;
 }
 
-button{
+/* This starting border applies to every button using this stylesheet. */
+button {
     border: solid 1px black;
 }
 
-.signup-button{
-    margin-right: 10px;
+/* Keep the account controls together in the grid position called auth. */
+.signup-login {
+    grid-area: auth;
+
+    /* Flex puts the controls next to each other in a row by default. */
+    display: flex;
+
+    /* Leave 10px between the visible controls inside this group. */
+    gap: 10px;
+
+    /* Put the whole account group at the right edge of its grid area. */
+    justify-self: end;
+}
+
+/* Starting size and rounded corners for buttons inside the account group. */
+.signup-login button {
+    /* Replace the starting black border color with gray to match the search box. */
+    border-color: gray;
+
+    /* Give the button label space around it: 8px top/bottom, 20px left/right. */
+    padding: 8px 20px;
+
+    /* Keep Sign Up and Login at least 110px wide on wide screens. */
+    min-width: 110px;
+
+    /* Keep a label like Sign Up on one line. This does not move the button. */
+    white-space: nowrap;
+
+    /* A large radius makes both ends fully rounded, like a pill shape. */
+    border-radius: 999px;
+}
+
+/*
+ * The avatar button has its own size and shape.
+ * .signup-login .account-avatar is more specific than .signup-login button,
+ * so its 40px minimum width and 6px padding win over the general button rules.
+ * The same is true when the general button rules change below at 480px.
+ *
+ * Current behavior: wide screens show Sign Up/Login; small screens show avatar.
+ * Showing an avatar after a real login on wide screens still needs login state.
+ */
+.signup-login .account-avatar {
+    /* Hide it on wide screens. It stays in the JSX but takes no layout space. */
+    display: none;
+
+    /* Equal width and height make a square before we round its corners. */
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+
+    /* Leave space around the person image inside the button. */
+    padding: 6px;
+
+    /* Use a light border and background for the gray person icon. */
+    border: 1px solid #d1d5db;
+    border-radius: 50%;
+    background: #f3f4f6;
+
+    /*
+     * 50% rounded corners turn the square button into a circle.
+     * These two alignment rules center its image when display becomes flex.
+     * align-items centers vertically; justify-content centers horizontally.
+     */
+    align-items: center;
+    justify-content: center;
+}
+
+/* Fill the space available for the image inside the avatar's padding. */
+.account-avatar img {
+    width: 100%;
+    height: 100%;
+}
+
+/*
+ * Apply these changes when the viewport is 800 CSS pixels wide or smaller.
+ * Think of the condition as: if (screenWidth <= 800).
+ * The rules also include widths below 480px; the later block adjusts them more.
+ */
+@media (max-width: 800px) {
+    nav {
+        /*
+         * First row: empty space, store name, cart, avatar.
+         * The dot means an empty grid position. It needs no extra JSX element.
+         * Repeating search four times makes it cover all four columns below.
+         */
+        grid-template-areas:
+            ". brand cart auth"
+            "search search search search";
+
+        /*
+         * The right side uses 40px for cart + 16px gap + 40px for avatar = 96px.
+         * Reserve the same 96px on the left so the name is centered in the page,
+         * instead of only being centered in the space left before the icons.
+         * The name takes the remaining space and can wrap if it becomes narrow.
+         * If cart width, avatar width, or their gap changes, update this balance.
+         */
+        grid-template-columns: 96px minmax(0, 1fr) 40px 40px;
+    }
+
+    .store-name {
+        /* Center the title text, including each line when the name wraps. */
+        text-align: center;
+    }
+
+    /*
+     * A comma means the same rule applies to BOTH selectors.
+     * Hide the two guest buttons to leave more room on small screens.
+     */
+    .signup-login .signup-button,
+    .signup-login .login-button {
+        display: none;
+    }
+
+    .signup-login .account-avatar {
+        /* Show the avatar and use its flex alignment to center the image. */
+        display: flex;
+    }
+}
+
+/* Apply these extra changes when the viewport is 480px wide or smaller. */
+@media (max-width: 480px) {
+    nav {
+        /* Reduce left/right gaps. The space between rows still uses gap: 16px. */
+        column-gap: 8px;
+
+        /* A single padding value means 12px on all four sides. */
+        padding: 12px;
+
+        /*
+         * The right side is now 40px cart + 8px gap + 40px avatar = 88px.
+         * Reduce the empty left column to match and keep the name centered.
+         */
+        grid-template-columns: 88px minmax(0, 1fr) 40px 40px;
+    }
+
+    .signup-login {
+        /*
+         * Use a smaller gap if this group has several visible controls.
+         * Right now only the avatar is visible here, so this gap adds no space.
+         */
+        gap: 6px;
+    }
+
+    .signup-login button {
+        /*
+         * Remove the general 110px minimum and reduce side padding.
+         * Sign Up/Login are currently hidden at this size.
+         * The more specific avatar rule above keeps its own 40px size and padding.
+         */
+        min-width: 0;
+        padding: 8px 10px;
+    }
 }
