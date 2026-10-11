@@ -15,10 +15,10 @@ const NavBar = () => {
               POS
             </button>
             <button>
-              BUTTON 1
+              CLOCK-IN
             </button>
             <button>
-              BUTTON 2
+              PROFILE
             </button>
           </section>
         </div>

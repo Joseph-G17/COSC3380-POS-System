@@ -1,10 +1,16 @@
 import React from 'react'
 
-const HomePage = () => {
+const HomePage = ({ sidebar }) => {
   return (
-    <div className='border-b border-r'>
-      MAIN PAGE
-    </div>
+    <section className='border-b border-r'>
+      <div className='inline-flex p-10'>
+        <h1 className='text-2xl pr-2'>{}</h1>
+        <button> Add New </button>
+      </div>
+      <main className=''>
+
+      </main>
+    </section>
   )
 }
 
