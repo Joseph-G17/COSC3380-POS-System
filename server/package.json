@@ -13,7 +13,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "mysql2": "^3.24.4"
+    "mysql": "^2.18.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"

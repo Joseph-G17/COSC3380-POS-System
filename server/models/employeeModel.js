@@ -1,0 +1,49 @@
+let employees = require('../testdata/employees');
+const { writeDataToFile } = require('../utilities');
+
+function findAll(){
+  return new Promise((resolve, reject) => {
+    resolve(employees);
+  })
+}
+
+function findByID(id) {
+  return new Promise((resolve, reject) => {
+    const employee = employees.find((e) => e.EmployeeID === id)
+    resolve(employee);
+  })
+}
+
+function create(employee){
+  return new Promise((resolve, reject) =>{
+    const newEmployee = {EmployeeID: '6', ...employee};
+    employees.push(newEmployee);
+    writeDataToFile('./testdata/employees.json', employees);
+    resolve(newEmployee);
+  })
+} 
+
+function update(id, employeeData) {
+  return new Promise((resolve, reject) => {
+    const index = employees.findIndex((e) => e.EmployeeID === id)
+    employees[index] = {EmployeeID: id, ...employeeData}
+    writeDataToFile('./testdata/employees.json', employees);
+    resolve(employees[index]);
+  })
+}
+
+function remove(id) {
+  return new Promise((resolve, reject) => {
+    employees = employees.filter((e) => e.EmployeeID !== id);
+    writeDataToFile('./testdata/employees.json', employees);
+    resolve();
+  })
+}
+
+module.exports = {
+  findAll,
+  findByID,
+  create,
+  update,
+  remove
+}
