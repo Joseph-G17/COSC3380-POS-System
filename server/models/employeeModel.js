@@ -1,11 +1,18 @@
 let employees = require('../testdata/employees');
+let { query } = require('../sqlConnecter')
 const { writeDataToFile } = require('../utilities');
 
+/* BEFORE QUERY PROMISE 
 function findAll(){
   return new Promise((resolve, reject) => {
     resolve(employees);
   })
 }
+*/
+function findAll(){
+  return query('SELECT * FROM Employees');
+}
+
 
 function findByID(id) {
   return new Promise((resolve, reject) => {

@@ -1,4 +1,5 @@
-const http = require('http')
+const http = require('http');
+
 const { getEmployees, getEmployee, createEmployee, updateEmployee, deleteEmployee } = require('./controllers/employeeController')
 
 const server = http.createServer((req, res) => {
@@ -12,7 +13,7 @@ const server = http.createServer((req, res) => {
   else if(req.url === '/api/employees' && req.method === 'POST'){
     createEmployee(req, res);
   }
-   else if(req.url.match(/^\/api\/employees\/([0-9]+)$/) && req.method === 'PUT'){
+  else if(req.url.match(/^\/api\/employees\/([0-9]+)$/) && req.method === 'PUT'){
     const id = req.url.split('/')[3]; // api/employee/1
     updateEmployee(req, res, id);
   }
