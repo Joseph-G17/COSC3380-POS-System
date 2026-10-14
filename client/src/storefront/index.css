@@ -56,6 +56,24 @@ nav {
     min-width: 0;
 }
 
+/* Style only the store logo; the account avatar has its own image rules. */
+.store-logo {
+    /* Start with a 96px-wide logo in the navbar. */
+    width: 96px;
+
+    /* Shrink the logo if its grid area is narrower than 96px, keeping the controls inside the navbar. */
+    max-width: 100%;
+
+    /* Calculate the height from the original aspect ratio so the logo is not stretched. */
+    height: auto;
+
+    /* Use a block image to remove the baseline gap left by inline images. */
+    display: block;
+
+    /* Split the free inline space equally to center the logo in its grid area, including on small screens. */
+    margin-inline: auto;
+}
+
 /* This is the outer border around the search input. */
 .search-bar {
     grid-area: search;

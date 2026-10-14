@@ -121,13 +121,27 @@ const Navbar = () => {
     // <nav> tells the browser that this group is a navigation area.
     <nav>
       {/*
-        Store name
-        This div groups the title into one box for CSS to position.
-        The h1 contains the visible name of our store.
-        On small screens, CSS balances space on both sides to center this title.
+        Store logo
+        Keep the store-name div so the logo stays in the navbar's brand grid area.
+        The image already contains SaveSo lettering, so it replaces the old text.
+        Vite serves public files from the site root: /SaveSo logo.png.
+        Do not include /public in src; this public URL does not need an import.
+        className="store-logo" connects the image to its size and alignment rules.
+        alt="SaveSo" names the store for screen readers and if the image cannot load.
+        Keep h1 so the store name remains available as a heading.
+        width and height describe the original image and reserve its aspect ratio.
+        CSS controls the displayed size; the image is not shown at its full 451px width.
       */}
       <div className="store-name">
-        <h1>Team 2 Grocery Store</h1>
+        <h1>
+          <img
+            className="store-logo"
+            src="/SaveSo logo.png"
+            alt="SaveSo"
+            width={451}
+            height={438}
+          />
+        </h1>
       </div>
 
       {/*
