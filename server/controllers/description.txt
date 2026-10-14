@@ -1,0 +1,2 @@
+CONTROLLERS: Controls each particular route sending status, headers,
+interact with the model on the data to send back

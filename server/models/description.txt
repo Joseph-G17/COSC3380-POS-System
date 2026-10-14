@@ -1,0 +1,2 @@
+MODEL: handles data with functions that either GET, CREATE, UPDATE, 
+DELETE that data
