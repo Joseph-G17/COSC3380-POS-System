@@ -40,7 +40,7 @@ async function getEmployee(req, res, id) {
 // route: POST /api/employees
 async function createEmployee(req, res){
   try {
-    const body = await getPostData(req);
+    const body = await getPostData(req); //for raw js data!
 
     const { firstName, lastName, email} =  JSON.parse(body);
     const employee = {
@@ -53,6 +53,7 @@ async function createEmployee(req, res){
 
     res.writeHead(201, {'Content-Type': 'application/json'});
     return res.end(JSON.stringify(newEmployee));
+
   }  catch (error){
     console.log(error);
   }

@@ -1,13 +1,16 @@
 const mysql = require('mysql2');
 
 var pool = mysql.createPool({
-  connectionLimit: 3,
-  host: '127.0.0.1',
-  user: 'root',
-  password: '',
-  database: 'mydb'
+  connectionLimit: Number(process.env.DB_CONNECTIONLIMIT) || 3,
+  port: Number(process.env.DB_PORT) || 3306,
+  host: process.env.DB_HOST ||'127.0.0.1',
+  user: process.env.DB_USER ||'root',
+  password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_DATABASE || 'mydb'
 
 });
+
+// node --env-file=.env server.js
 
 function query(sql, params){
   return new Promise((resolve, reject) => {

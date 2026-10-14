@@ -13,7 +13,7 @@ function findAll(){
   return query('SELECT * FROM Employees');
 }
 
-
+//SELECT
 function findByID(id) {
   return new Promise((resolve, reject) => {
     const employee = employees.find((e) => e.EmployeeID === id)
@@ -21,6 +21,7 @@ function findByID(id) {
   })
 }
 
+//INSERT INTO
 function create(employee){
   return new Promise((resolve, reject) =>{
     const newEmployee = {EmployeeID: '6', ...employee};
@@ -30,6 +31,7 @@ function create(employee){
   })
 } 
 
+//UPDATE 
 function update(id, employeeData) {
   return new Promise((resolve, reject) => {
     const index = employees.findIndex((e) => e.EmployeeID === id)
@@ -39,6 +41,7 @@ function update(id, employeeData) {
   })
 }
 
+//DELETE
 function remove(id) {
   return new Promise((resolve, reject) => {
     employees = employees.filter((e) => e.EmployeeID !== id);
