@@ -9,6 +9,8 @@ const App = () => {
       <Route path='/admin' element={<AdminMainLayout /> }>
         <Route index element={<HomePage /> } />
       </Route>
+      <Route path='/cashier' element={<CashierMainLayout.jsx/> }>
+      </Route>
     )
   );
   
