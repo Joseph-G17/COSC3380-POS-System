@@ -1,7 +1,7 @@
 import { Route, createBrowserRouter, createRoutesFromElements, RouterProvider} from 'react-router-dom'
 
 import AdminMainLayout from './layouts/AdminMainLayout';
-import HomePage from '../admin/pages/admin/HomePage';
+import HomePage from './pages/admin/HomePage';
 
 const App = () => {
   const router = createBrowserRouter(
