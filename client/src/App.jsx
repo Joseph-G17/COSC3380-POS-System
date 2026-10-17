@@ -2,6 +2,11 @@ import { Route, createBrowserRouter, createRoutesFromElements, RouterProvider} f
 
 import AdminMainLayout from './layouts/AdminMainLayout';
 import HomePage from './pages/admin/HomePage';
+import ClockInPage from './pages/admin/ClockInPage';
+import EditProfilePage from './pages/admin/EditProfilePage';
+import InspectDataPage from './pages/admin/InspectDataPage';
+import UpdateDataPage from './pages/admin/UpdateDataPage';
+
 import OnlineStoreLayout from './layouts/OnlineStoreLayout';
 
 const App = () => {
@@ -15,6 +20,10 @@ const App = () => {
         {/* Preserve the existing admin layout and its default page. */}
         <Route path='/admin' element={<AdminMainLayout /> }>
           <Route index element={<HomePage /> } />
+          <Route path='/admin/clock-in' element={<ClockInPage />}/>
+          <Route path='/admin/profile' element={<EditProfilePage />}/>
+          <Route path='/admin/inspectData' element={<InspectDataPage />}/>
+          <Route path='/admin/updateData' element={<UpdateDataPage />}/>
         </Route>
       </>
     )

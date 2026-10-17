@@ -1,6 +1,8 @@
-import React from 'react'
+import { useNavigate } from "react-router-dom"
 
 const NavBar = () => {
+  const navigate = useNavigate();
+
   return (
       <nav className='flex border-t border-r border-b'>
         <div className='flex flex-1 space-x-2 p-7'>
@@ -11,13 +13,13 @@ const NavBar = () => {
             </form>
           </search>
           <section className='flex space-x-4 ml-auto'>
-            <button>
+            <button className='p-1 border' onClick={()=> navigate('/cashier')} > 
               POS
             </button>
-            <button>
+            <button className='p-1 border' onClick={()=> navigate('/admin/clock-in')}>
               CLOCK-IN
             </button>
-            <button>
+            <button className='p-1 border' onClick={()=> navigate('/admin/profile')}>
               PROFILE
             </button>
           </section>
