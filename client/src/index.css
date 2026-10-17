@@ -8,3 +8,27 @@ body {
 * {
     text-wrap: nowrap;
 }
+
+h1 {
+    font-weight: 200;
+}
+
+h2 {
+    font-weight: 250;
+}
+button:hover {
+    cursor: pointer
+}
+.button-highlight:hover {
+    transition-duration: 50ms;
+    transition: ease-in;
+    background-color: #fef3c6;
+}
+.input-bar {
+    border: 1px solid grey;
+    padding: 10px;
+}
+.input-bar:focus {
+    outline: none;
+}
+

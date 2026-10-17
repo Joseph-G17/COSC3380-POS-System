@@ -1,5 +1,7 @@
 import { Route, createBrowserRouter, createRoutesFromElements, RouterProvider} from 'react-router-dom'
 
+import LoginLayout from './layouts/LoginLayout'
+
 import AdminMainLayout from './layouts/AdminMainLayout';
 import HomePage from './pages/admin/HomePage';
 import ClockInPage from './pages/admin/ClockInPage';
@@ -16,6 +18,9 @@ const App = () => {
       <>
         {/* Render the customer storefront at the site's root URL. */}
         <Route path='/' element={<OnlineStoreLayout />} />
+
+        {/* Login for Employee's and Customer's */}
+        <Route path='/login' element={<LoginLayout />} />
 
         {/* Preserve the existing admin layout and its default page. */}
         <Route path='/admin' element={<AdminMainLayout /> }>

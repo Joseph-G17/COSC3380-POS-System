@@ -13,13 +13,13 @@ const NavBar = () => {
             </form>
           </search>
           <section className='flex space-x-4 ml-auto'>
-            <button className='p-1 border' onClick={()=> navigate('/cashier')} > 
+            <button className='button-highlight p-1 border' onClick={()=> navigate('/cashier')} > 
               POS
             </button>
-            <button className='p-1 border' onClick={()=> navigate('/admin/clock-in')}>
+            <button className='button-highlight p-1 border' onClick={()=> navigate('/admin/clock-in')}>
               CLOCK-IN
             </button>
-            <button className='p-1 border' onClick={()=> navigate('/admin/profile')}>
+            <button className='button-highlight p-1 border' onClick={()=> navigate('/admin/profile')}>
               PROFILE
             </button>
           </section>
