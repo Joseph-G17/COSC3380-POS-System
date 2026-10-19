@@ -1,4 +1,4 @@
-const CashierViewDiscounts = () => {
+const CashierViewitems = () => {
   return (
     <section className='border-b border-r'>
       <div className='inline-flex p-10'>
@@ -13,4 +13,4 @@ const CashierViewDiscounts = () => {
   )
 }
 
-export default CashierViewDiscounts
+export default CashierViewitems
