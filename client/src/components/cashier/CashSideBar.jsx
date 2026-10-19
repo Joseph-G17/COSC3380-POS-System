@@ -4,7 +4,7 @@ import { Link, useSearchParams } from "react-router-dom";
 const CashSideBar = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const entities = ['Orders', 'Items', 'Discounts', 'Sales', 'Department', 'Returns'];
+  const entities = ['Orders', 'Items', 'Discounts', 'Sales', 'Returns'];
   const currentEntity = searchParams.get('entity') ?? 'Employee'
 
   return (
@@ -14,13 +14,13 @@ const CashSideBar = () => {
       </div>
       <div className='grid gap-y-0.5'>
         {entities.map((entity) => (
-          ['Items', 'Orders'].includes(entity) ? (
+          ['Items', 'Orders', 'Discounts', 'Sales'].includes(entity) ? (
             <Link
               className='p-4 duration-50 ease-in hover:bg-amber-100 focus:bg-amber-100'
               key={entity}
               to={`/cashier/${entity.toLowerCase()}`}
             >
-              Manage {entity}
+               {entity}
             </Link>
           ) : (
             <button
@@ -28,7 +28,7 @@ const CashSideBar = () => {
               key={entity}
               onClick={() => setSearchParams({ entity })}
             >
-              Manage {entity}
+               {entity}
             </button>
           )
         ))}

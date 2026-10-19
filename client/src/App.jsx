@@ -6,7 +6,8 @@ import CashierMainLayout from './layouts/CashierMainLayout';
 import CashierCheckout from './pages/cashier/cashiercheckout';
 import CashierItems from './pages/cashier/cashieritems';
 import CashierOrders from './pages/cashier/cashierorders';
-
+import CashierViewDiscounts from './pages/cashier/cashierviewdiscounts';
+import CashierViewSales from './pages/cashier/cashierviewsales';
 const App = () => {
   const router = createBrowserRouter(
     createRoutesFromElements(
@@ -19,6 +20,8 @@ const App = () => {
           <Route path='checkout' element={<CashierCheckout />} />
           <Route path='items' element={<CashierItems />} />
           <Route path='orders' element={<CashierOrders />} />
+          <Route path='discounts' element={<CashierViewDiscounts />} />
+          <Route path='sales' element={<CashierViewSales />} />
         </Route>
       </>
     )
