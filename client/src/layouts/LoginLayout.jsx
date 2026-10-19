@@ -9,11 +9,11 @@ const LoginLayout = () => {
         <div className="mb-14">
           <p className="flex flex-col gap-2 p-2 font-light">
             <label htmlFor="" className="text-3xl">Email: </label>
-            <input required className='input-bar' type="email" />
+            <input required className='input-bar p-3' type="email" />
           </p>
           <p className="flex flex-col gap-2 p-2 font-light">
             <label htmlFor="" className="text-3xl">Password: </label>
-            <input required className='input-bar' type="password" />
+            <input required className='input-bar p-3' type="password" />
           </p>
         </div>
         <div className="flex justify-between">

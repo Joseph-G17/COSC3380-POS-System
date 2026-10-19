@@ -26,7 +26,6 @@ button:hover {
 }
 .input-bar {
     border: 1px solid grey;
-    padding: 10px;
 }
 .input-bar:focus {
     outline: none;

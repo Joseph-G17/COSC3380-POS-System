@@ -9,7 +9,7 @@ const NavBar = () => {
           <search>
             <form action='search' >
               <label htmlFor="" className='text-sm'>Search</label>
-              <input className='border ml-1' type="search"/>
+              <input className='input-bar border ml-1' type="search"/>
             </form>
           </search>
           <section className='flex space-x-4 ml-auto'>
