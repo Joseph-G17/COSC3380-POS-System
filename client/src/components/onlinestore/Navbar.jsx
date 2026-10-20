@@ -149,7 +149,7 @@ const Navbar = () => {
         <h1>
           <img
             className="w-[96px] max-w-full h-auto block mx-auto"
-            src="/SaveSo logo.png"
+            src="/SaveSolLogo.png" //use from public folder
             alt="SaveSo"
             width={451}
             height={438}
