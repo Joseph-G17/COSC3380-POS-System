@@ -16,6 +16,12 @@ async function getEmployees(req, res) {
   }
 } 
 
+async function getLogins(req, res){
+  const logins = await Employees.findLogins();
+  res.writeHead(200, {'Content-Type': 'application/json'});
+  res.end(JSON.stringify(logins));
+}
+
 // desc: Gets Single Employee
 // route: GET /api/employee/:EmployeeID
 async function getEmployee(req, res, id) {
@@ -112,6 +118,7 @@ async function deleteEmployee(req, res, id) {
 
 module.exports = {
   getEmployees,
+  getLogins,
   getEmployee,
   createEmployee,
   updateEmployee,
