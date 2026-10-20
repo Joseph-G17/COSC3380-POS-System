@@ -16,10 +16,21 @@ async function getEmployees(req, res) {
   }
 } 
 
-async function getLogins(req, res){
-  const logins = await Employees.findLogins();
-  res.writeHead(200, {'Content-Type': 'application/json'});
-  res.end(JSON.stringify(logins));
+async function getEmployeeLogin(req, res){
+  const body = await getPostData(req);
+  const {username, password} = JSON.parse(body);
+  
+  const rows = await Employees.findLogin(username);
+  const login = rows[0];
+
+  if(!login || login.employeePassword != password){
+    res.writeHead(401, {'Content-Type': 'application/json'});
+    res.end(JSON.stringify({message: 'Password does not match'}));
+  }
+  else {
+    res.writeHead(200, {'Content-Type': 'application/json'});
+    res.end(JSON.stringify({employeeID: login.employeeID, Role: login.Role}));
+  }
 }
 
 // desc: Gets Single Employee
@@ -118,7 +129,7 @@ async function deleteEmployee(req, res, id) {
 
 module.exports = {
   getEmployees,
-  getLogins,
+  getEmployeeLogin,
   getEmployee,
   createEmployee,
   updateEmployee,

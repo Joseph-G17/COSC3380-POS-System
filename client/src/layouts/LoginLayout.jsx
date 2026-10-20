@@ -5,20 +5,28 @@ const LoginLayout = () => {
   const navigate = useNavigate();
 
   async function SubmitLogin(username, password) {
-    const response = await fetch('/api/logins', {
-      method: 'GET',
+    const response = await fetch('/api/login', {
+      method: 'POST',
       headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({username, password}),
     });
-    const data =  await response.json();
-    for(let employee of data){
-      if(employee.EmployeeUsername == username && employee.EmployeePassword == password){
-          console.log(employee.EmployeeUsername, employee.EmployeePassword);
-          navigate('/admin');
-          return;
-        }
-      }
-      console.log('BAD PASSWORD');
-      return;
+    try{
+      const data =  await response.json();
+      console.log(data);
+
+      if(!data.employeeID)
+        return;
+
+      if(data.Role == 0)
+        navigate('/admin/profile');
+      else if(data.Role == 1)
+        navigate('/admin');
+      else
+        navigate('/')
+    }
+    catch(error){
+      console.log(error);
+    }
   }
   return (
     <div className="mt-7">
