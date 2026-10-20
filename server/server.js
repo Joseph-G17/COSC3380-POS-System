@@ -2,6 +2,9 @@ const http = require('http');
 
 const { getEmployees, getLogins,  getEmployee, createEmployee, updateEmployee, deleteEmployee } = require('./controllers/employeeController')
 
+//import the getProducts function from the OnlineStoreController
+const { getProducts } = require('./controllers/OnlineStoreController');
+
 const server = http.createServer((req, res) => {
   if(req.url === '/api/employees' && req.method === 'GET'){
     getEmployees(req, res);
@@ -23,6 +26,10 @@ const server = http.createServer((req, res) => {
   else if(req.url.match(/^\/api\/employees\/([0-9]+)$/) && req.method === 'DELETE'){
     const id = req.url.split('/')[3]; // api/employee/1
     deleteEmployee(req, res, id);
+  }
+  //for online store products
+  else if(req.url === '/api/products' && req.method === 'GET'){ 
+    getProducts(req, res);
   }
   else {
     res.writeHead(404,{'Content-Type': 'application/json' });

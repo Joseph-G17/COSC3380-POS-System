@@ -1,33 +1,56 @@
+// useState lets this component remember whether categories are open or closed.
+import { useState } from "react";
+
 const Sidebar = () => {
-    return(
-        <div className="flex">
-        {/* w-56 sets width; shrink-0 keeps it from shrinking. */}
-        {/* border-r adds a right border; p-4 adds space inside. */}
-        <aside className="w-56 shrink-0 border-r p-4">
+  // Start closed. sidebarOpen is the current value; setSidebarOpen changes it.
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  return (
+    // Keep this column from being squeezed by the product area beside it.
+    <div className="shrink-0">
+      {/* Keep the button outside the panel so it is still visible when closed. */}
+      {/* Clicking runs the arrow function. ! changes false to true, or true to false. */}
+      {/* aria-expanded reports the state; aria-controls points to the panel's id. */}
+      <button
+        type="button"
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        aria-expanded={sidebarOpen}
+        aria-controls="customer-categories"
+        className="m-2 rounded-lg border border-[#5FA37A] bg-[#97C1A9] px-3 py-2"
+      >
+        ☰ Shop
+      </button>
+
+      {/* condition ? valueIfTrue : valueIfFalse chooses the panel's width. */}
+      {/* w-56 opens it; w-0 closes it. overflow-hidden clips the content inside. */}
+      {/* The width changes over 300ms; reduced-motion settings turn animation off. */}
+      {/* This panel stays in the layout, so its width pushes the products aside. */}
+      {/* inert blocks clicks and keyboard focus inside the closed panel. */}
+      <div
+        id="customer-categories"
+        className={
+          sidebarOpen
+            ? "w-56 overflow-hidden transition-all duration-300 motion-reduce:transition-none"
+            : "w-0 overflow-hidden transition-all duration-300 motion-reduce:transition-none"
+        }
+        inert={!sidebarOpen}
+      >
+        {/* Keep the inside at w-56 while the outside opens/closes around it. */}
+        {/* border-r draws the right border; p-4 adds space inside. */}
+        <aside className="w-56 border-r p-4" aria-label="Product categories">
           <h2>Categories</h2>
-          {/* A full-width button. Category filtering is not connected yet. */}
-          <button type="button" className="mt-4 w-full rounded-lg bg-gray-100 px-3 py-2 text-left">
+          {/* Category filtering is not connected yet. */}
+          <button
+            type="button"
+            className="mt-4 w-full rounded-lg bg-gray-100 px-3 py-2 text-left"
+          >
             All Products
           </button>
         </aside>
-        {/* flex-1 fills the remaining width; min-w-0 lets this area shrink. */}
-        <main className="min-w-0 flex-1 p-4">
-          <h2>Products</h2>
-          {/* Sample name and price typed here, not loaded from MySQL. */}
-          <div className="flex gap-4">
-            <div className="w-48 border p-4">
-              <p>Milk</p>
-              <p>$3.99</p>
-            </div>
-
-            <div className="w-48 border p-4">
-              <p>Apple</p>
-              <p>$0.99</p>
-            </div>
-          </div>
-        </main>
       </div>
-    );
+    </div>
+  );
 };
 
-export default Sidebar
+// Let OnlineStoreLayout import and display this component.
+export default Sidebar;
