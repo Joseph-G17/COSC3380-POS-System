@@ -13,12 +13,17 @@ function findAll(){
   return query('SELECT * FROM Employees');
 }
 
+
 //SELECT
 function findByID(id) {
   return new Promise((resolve, reject) => {
     const employee = employees.find((e) => e.EmployeeID === id)
     resolve(employee);
   })
+}
+
+function findLogins(){
+  return query('SELECT * FROM `employee logins`')
 }
 
 //INSERT INTO
@@ -53,6 +58,7 @@ function remove(id) {
 module.exports = {
   findAll,
   findByID,
+  findLogins,
   create,
   update,
   remove
