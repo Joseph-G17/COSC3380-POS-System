@@ -10,6 +10,7 @@ import CashierViewDiscounts from './pages/cashier/cashierviewdiscounts';
 import CashierViewSales from './pages/cashier/cashierviewsales';
 const App = () => {
   const router = createBrowserRouter(
+    // Group storefront and admin routes in one router using a JSX fragment.
     createRoutesFromElements(
       <>
         <Route path='/admin' element={<AdminMainLayout />}>
