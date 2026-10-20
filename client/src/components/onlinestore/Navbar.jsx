@@ -133,7 +133,7 @@ const Navbar = () => {
      * Only the column gap shrinks on the smallest screens; row spacing stays 16px.
      */
     <nav
-      className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-[16px] px-[24px] py-[16px] [@media(480px<width<=800px)]:grid-cols-[96px_minmax(0,1fr)_40px_40px] [@media(max-width:480px)]:grid-cols-[88px_minmax(0,1fr)_40px_40px] [@media(max-width:480px)]:gap-x-[8px] [@media(max-width:480px)]:p-[12px]"
+      className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-4 px-6 py-4 [@media(480px<width<=800px)]:grid-cols-[96px_minmax(0,1fr)_40px_40px] [@media(max-width:480px)]:grid-cols-[88px_minmax(0,1fr)_40px_40px] [@media(max-width:480px)]:gap-x-[8px] [@media(max-width:480px)]:p-[12px]"
     >
       {/*
         Store logo
