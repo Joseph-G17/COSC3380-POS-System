@@ -1,13 +1,19 @@
 const http = require('http');
 
-const { getEmployees, getLogins,  getEmployee, createEmployee, updateEmployee, deleteEmployee } = require('./controllers/employeeController')
+const { getEmployees, getEmployeeLogin,  getEmployee, createEmployee, updateEmployee, deleteEmployee } = require('./controllers/employeesController')
+const { getOrders } = require('./controllers/ordersController');
+const { getDepartments } = require('./controllers/departmentsController');
+const { getInventory } = require('./controllers/inventoryController');
+const { getDiscounts } = require('./controllers/discountsController');
+const { getSales } = require('./controllers/salesController');
+const { getReturns } = require('./controllers/returnsController');
 
 const server = http.createServer((req, res) => {
   if(req.url === '/api/employees' && req.method === 'GET'){
     getEmployees(req, res);
   } 
-  else if(req.url === '/api/logins' && req.method === 'GET'){
-    getLogins(req, res);
+  else if(req.url === '/api/login' && req.method === 'POST'){
+    getEmployeeLogin(req, res);
   }
   else if(req.url.match(/^\/api\/employees\/([0-9]+)$/) && req.method === 'GET'){ //req.params.id equivalent
     const id = req.url.split('/')[3]; // api/employee/1
@@ -23,6 +29,24 @@ const server = http.createServer((req, res) => {
   else if(req.url.match(/^\/api\/employees\/([0-9]+)$/) && req.method === 'DELETE'){
     const id = req.url.split('/')[3]; // api/employee/1
     deleteEmployee(req, res, id);
+  }
+  else if(req.url == '/api/orders' && req.method === 'GET'){
+    getOrders(req, res);
+  }
+  else if(req.url == '/api/sales' && req.method === 'GET'){
+    getSales(req, res);
+  }
+  else if(req.url == '/api/departments' && req.method === 'GET'){
+    getDepartments(req, res);
+  }
+  else if(req.url == '/api/inventory' && req.method === 'GET'){
+    getInventory(req, res);
+  }
+  else if(req.url == '/api/discounts' && req.method === 'GET'){
+    getDiscounts(req, res);
+  }
+  else if(req.url == '/api/returns' && req.method === 'GET'){
+    getReturns(req, res);
   }
   else {
     res.writeHead(404,{'Content-Type': 'application/json' });

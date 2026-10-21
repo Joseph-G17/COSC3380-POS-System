@@ -1,4 +1,5 @@
 const Employees = require('../models/employeeModel');
+const Universal = require('../models/universalModel');
 
 const { getPostData } = require('../utilities')
 
@@ -6,7 +7,7 @@ const { getPostData } = require('../utilities')
 // route: GET /api/employee
 async function getEmployees(req, res) {
   try {
-    const employees = await Employees.findAll();
+    const employees = await Universal.findAll('employees');
 
     res.writeHead(200, {'Content-Type': 'application/json' });
     res.end(JSON.stringify(employees));
@@ -16,10 +17,21 @@ async function getEmployees(req, res) {
   }
 } 
 
-async function getLogins(req, res){
-  const logins = await Employees.findLogins();
-  res.writeHead(200, {'Content-Type': 'application/json'});
-  res.end(JSON.stringify(logins));
+async function getEmployeeLogin(req, res){
+  const body = await getPostData(req);
+  const {username, password} = JSON.parse(body);
+  
+  const rows = await Employees.findEmployeeLogin(username);
+  const login = rows[0];
+
+  if(!login || login.employeePassword != password){
+    res.writeHead(401, {'Content-Type': 'application/json'});
+    res.end(JSON.stringify({message: 'Password does not match'}));
+  }
+  else {
+    res.writeHead(200, {'Content-Type': 'application/json'});
+    res.end(JSON.stringify({employeeID: login.employeeID, Role: login.Role}));
+  }
 }
 
 // desc: Gets Single Employee
@@ -118,7 +130,7 @@ async function deleteEmployee(req, res, id) {
 
 module.exports = {
   getEmployees,
-  getLogins,
+  getEmployeeLogin,
   getEmployee,
   createEmployee,
   updateEmployee,

@@ -22,18 +22,17 @@ function findByID(id) {
   })
 }
 
-function findLogins(){
-  return query('SELECT * FROM `employee logins`')
+function findEmployeeLogin(username){
+  const sql = 'SELECT l.employeeID, l.employeePassword, e.Role FROM \`employee logins\` as l JOIN employees as e ON e.employeeID = l.employeeID WHERE l.employeeUsername = ?'
+  return query(sql, username);
 }
 
 //INSERT INTO
-function create(employee){
-  return new Promise((resolve, reject) =>{
-    const newEmployee = {EmployeeID: '6', ...employee};
-    employees.push(newEmployee);
-    writeDataToFile('./testdata/employees.json', employees);
-    resolve(newEmployee);
-  })
+function create(employee){ 
+  const sql = 'INSERT INTO employees (DepartmentID, FirstName, LastName, Email, Role, BirthDate, HireDate) VALUES (?,?,?,?,?,?,?)'
+  const params = [1, 'Chris', 'Mai', 'random5@company.com', '1', '2000-19-01', '2020-20-02'];
+
+  return query(sql, params);
 } 
 
 //UPDATE 
@@ -58,7 +57,7 @@ function remove(id) {
 module.exports = {
   findAll,
   findByID,
-  findLogins,
+  findEmployeeLogin,
   create,
   update,
   remove
