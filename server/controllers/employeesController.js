@@ -1,4 +1,5 @@
 const Employees = require('../models/employeeModel');
+const Universal = require('../models/universalModel');
 
 const { getPostData } = require('../utilities')
 
@@ -6,7 +7,7 @@ const { getPostData } = require('../utilities')
 // route: GET /api/employee
 async function getEmployees(req, res) {
   try {
-    const employees = await Employees.findAll();
+    const employees = await Universal.findAll('employees');
 
     res.writeHead(200, {'Content-Type': 'application/json' });
     res.end(JSON.stringify(employees));

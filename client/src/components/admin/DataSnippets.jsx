@@ -1,8 +1,19 @@
 
 
 const DataSnippets = ({ entity }) => {
+  async function GetColHeaders(){
+    const response = await fetch(`/api/${entity}`, {
+      method: 'GET',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({entity})
+    });
+    const data = await response.json();
+    
+    console.log(data);
+  }
+
   //let cols will be the main attributes of that entity
-  let cols = ['data1','data1','data1','data1','data1', entity]
+  let cols = [];
   return (
     <main className=''>
       <div className="grid grid-flow-col border-t border-b border-r">
