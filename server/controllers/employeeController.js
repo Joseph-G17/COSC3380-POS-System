@@ -20,7 +20,7 @@ async function getEmployeeLogin(req, res){
   const body = await getPostData(req);
   const {username, password} = JSON.parse(body);
   
-  const rows = await Employees.findLogin(username);
+  const rows = await Employees.findEmployeeLogin(username);
   const login = rows[0];
 
   if(!login || login.employeePassword != password){

@@ -12,10 +12,11 @@ const LoginLayout = () => {
     });
     try{
       const data =  await response.json();
-      console.log(data);
 
       if(!data.employeeID)
         return;
+
+      const currentEmployeeID = data.employeeID;
 
       if(data.Role == 0)
         navigate('/admin/profile');

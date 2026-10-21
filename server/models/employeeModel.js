@@ -22,7 +22,7 @@ function findByID(id) {
   })
 }
 
-function findLogin(username){
+function findEmployeeLogin(username){
   const sql = 'SELECT l.employeeID, l.employeePassword, e.Role FROM \`employee logins\` as l JOIN employees as e ON e.employeeID = l.employeeID WHERE l.employeeUsername = ?'
   return query(sql, username);
 }
@@ -57,7 +57,7 @@ function remove(id) {
 module.exports = {
   findAll,
   findByID,
-  findLogin,
+  findEmployeeLogin,
   create,
   update,
   remove
