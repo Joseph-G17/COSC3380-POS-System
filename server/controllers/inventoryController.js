@@ -1,4 +1,4 @@
-const {universal} = require('../models/universalModel')
+const Universal = require('../models/universalModel')
 const {getPostData} = require('../utilities');
 
 
