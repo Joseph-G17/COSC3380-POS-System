@@ -49,19 +49,22 @@ const Navbar = () => {
   const [searchHint, setSearchHint] = useState("");
 
   // Read the device's motion preference once when this component starts.
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(() =>
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(
+    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
   );
 
   useEffect(() => {
     // Follow later preference changes too, without changing device settings.
-    const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const motionPreference = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    );
     const handleMotionChange = (event) => {
       setPrefersReducedMotion(event.matches);
       setSearchHint("");
     };
     motionPreference.addEventListener("change", handleMotionChange);
-    return () => motionPreference.removeEventListener("change", handleMotionChange);
+    return () =>
+      motionPreference.removeEventListener("change", handleMotionChange);
   }, []);
 
   useEffect(() => {
@@ -132,9 +135,7 @@ const Navbar = () => {
      * gap controls spacing BETWEEN groups; px/py control padding INSIDE the navbar.
      * Only the column gap shrinks on the smallest screens; row spacing stays 16px.
      */
-    <nav
-      className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-4 px-6 py-4 [@media(480px<width<=800px)]:grid-cols-[96px_minmax(0,1fr)_40px_40px] [@media(max-width:480px)]:grid-cols-[88px_minmax(0,1fr)_40px_40px] [@media(max-width:480px)]:gap-x-[8px] [@media(max-width:480px)]:p-[12px]"
-    >
+    <nav className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-4 px-6 py-4 [@media(480px<width<=800px)]:grid-cols-[96px_minmax(0,1fr)_40px_40px] [@media(max-width:480px)]:grid-cols-[88px_minmax(0,1fr)_40px_40px] [@media(max-width:480px)]:gap-x-[8px] [@media(max-width:480px)]:p-[12px]">
       {/*
         Store logo
         min-w-0 lets the logo's grid cell shrink without widening the page.
@@ -149,7 +150,7 @@ const Navbar = () => {
         <h1>
           <img
             className="w-[96px] max-w-full h-auto block mx-auto"
-            src="/SaveSo logo.png"
+            src="/SaveSolLogo.png" //use from public folder
             alt="SaveSo"
             width={451}
             height={438}
@@ -204,7 +205,22 @@ const Navbar = () => {
         The count span is a placeholder: real cart data and click behavior are not connected.
       */}
       <div className="flex h-[40px] w-[40px] min-w-[40px] items-center justify-center rounded-full border border-[#808080] [@media(max-width:800px)]:col-start-3 [@media(max-width:800px)]:row-start-1">
-        <span className="cart-icon">🛒</span>
+        <span className="cart-icon">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+            className="size-6"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"
+            />
+          </svg>
+        </span>
         <span className="cart-count"></span>
       </div>
 
