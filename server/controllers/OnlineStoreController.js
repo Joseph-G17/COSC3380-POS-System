@@ -1,10 +1,9 @@
-const Products = require("../models/OnlineStoreModel"); // Connect the controller to the OnlineStore Model to use function insdie
-
+const Universal = require("../models/universalModel"); // Connect the controller to the Universal Model to use function insdie
 async function getProducts(req, res) {
   // try to get products, then send them to the browser
   try {
     // wait for the model to get products from MySQL
-    const products = await Products.findAll();
+    const products = await Universal.findAll("Items");
     // 200 means success, and the response uses JSON
     res.writeHead(200, { "Content-Type": "application/json" });
     // turn products into JSON text, send it, then end this response
