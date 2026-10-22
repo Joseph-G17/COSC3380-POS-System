@@ -2,8 +2,15 @@
 import Navbar from "../components/onlinestore/Navbar";
 import Sidebar from "../components/onlinestore/Sidebar";
 import ProductList from "../components/onlinestore/ProductList";
+import Cart from "../components/onlinestore/Cart";
+import { useState } from "react";
+
+function addToCart(product){
+  console.log("Add to cart:", product);
+}
 
 const OnlineStoreLayout = () => {
+  const [cartItems, setCartItems] = useState([]);
   return (
     <div>
       {/* Navbar stays above the sidebar and the product area. */}
@@ -14,7 +21,7 @@ const OnlineStoreLayout = () => {
       {/* Sidebar owns its open/closed state; this file only arranges components. */}
       <div className="flex items-start">
         <Sidebar />
-        <ProductList />
+        <ProductList onAddToCart={addToCart} />
       </div>
     </div>
   );

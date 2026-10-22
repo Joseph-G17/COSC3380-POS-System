@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useEffect } from "react";
 
-const ProductList = () => {
+const ProductList = ({onAddToCart}) => {
   // Store the API products here so React can update the cards.
   const [products, setProducts] = useState([]);
   // Show the empty message only after the request succeeds.
@@ -55,6 +55,7 @@ const ProductList = () => {
           <div key={product.ItemID} className="w-48 border p-4">
             <p>{product.ItemName}</p>
             <p>${product.ItemPrice}</p>
+            <button type="button" className="mt-2 border px-2 py-1" onClick={()=>onAddToCart(product)}>Add to Cart</button>
           </div>
         ))}
       </div>
