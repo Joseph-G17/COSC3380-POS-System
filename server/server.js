@@ -9,7 +9,7 @@ const { getSales } = require('./controllers/salesController');
 const { getReturns } = require('./controllers/returnsController');
 
 const server = http.createServer((req, res) => {
-  if(req.url === '/api/employees' && req.method === 'GET'){
+  if(req.url === '/api/Employees' && req.method === 'GET'){
     getEmployees(req, res);
   } 
   else if(req.url === '/api/login' && req.method === 'POST'){
@@ -30,22 +30,22 @@ const server = http.createServer((req, res) => {
     const id = req.url.split('/')[3]; // api/employee/1
     deleteEmployee(req, res, id);
   }
-  else if(req.url == '/api/orders' && req.method === 'GET'){
+  else if(req.url == '/api/Orders' && req.method === 'GET'){
     getOrders(req, res);
   }
-  else if(req.url == '/api/sales' && req.method === 'GET'){
+  else if(req.url == '/api/Sales' && req.method === 'GET'){
     getSales(req, res);
   }
-  else if(req.url == '/api/departments' && req.method === 'GET'){
+  else if(req.url == '/api/Departments' && req.method === 'GET'){
     getDepartments(req, res);
   }
-  else if(req.url == '/api/inventory' && req.method === 'GET'){
+  else if(req.url == '/api/Inventory' && req.method === 'GET'){
     getInventory(req, res);
   }
-  else if(req.url == '/api/discounts' && req.method === 'GET'){
+  else if(req.url == '/api/Discounts' && req.method === 'GET'){
     getDiscounts(req, res);
   }
-  else if(req.url == '/api/returns' && req.method === 'GET'){
+  else if(req.url == '/api/Returns' && req.method === 'GET'){
     getReturns(req, res);
   }
   else {
