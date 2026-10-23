@@ -37,7 +37,7 @@ const App = () => {
           <Route path='forms/:form' element={<FormsPage />}/>
           <Route path='clock-in' element={<ClockInPage />}/>
           <Route path='profile' element={<EditProfilePage />}/>
-          <Route path='inspectData' element={<InspectDataPage />}/>
+          <Route path='inspectData/:entity/:id' element={<InspectDataPage />}/>
           <Route path='updateData' element={<UpdateDataPage />}/>
         </Route>
         

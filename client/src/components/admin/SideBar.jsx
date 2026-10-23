@@ -19,7 +19,7 @@ const SideBar = () => {
       <h2 className='place-self-center text-xl underline'>Manage</h2>
       <div className='grid gap-y-0.5'>
         {entities.map((entity) => 
-          <NavLink className='p-4 button-highligh focus:bg-amber-100'
+          <NavLink className='p-4 button-highlight focus:bg-amber-100'
             key={entity}
             to={`/admin/manage/${entity}`}
           >

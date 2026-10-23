@@ -7,6 +7,7 @@ const { getInventory } = require('./controllers/inventoryController');
 const { getDiscounts } = require('./controllers/discountsController');
 const { getSales } = require('./controllers/salesController');
 const { getReturns } = require('./controllers/returnsController');
+const { getItems } = require('./controllers/itemController')
 
 const server = http.createServer((req, res) => {
   if(req.url === '/api/Employees' && req.method === 'GET'){
@@ -32,6 +33,9 @@ const server = http.createServer((req, res) => {
   }
   else if(req.url == '/api/Orders' && req.method === 'GET'){
     getOrders(req, res);
+  }
+  else if(req.url == '/api/Items' && req.method === 'GET'){
+    getItems(req, res);
   }
   else if(req.url == '/api/Sales' && req.method === 'GET'){
     getSales(req, res);

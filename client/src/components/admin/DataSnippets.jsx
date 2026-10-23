@@ -1,9 +1,9 @@
 import {useEffect, useState} from 'react'
 import DataSnippet from './DataSnippet';
 
-const DataSnippets = ({ entity }) => {
+const DataSnippets = ({ entity, idField }) => {
   //let cols will be the main attributes of that entity
-  const [cols, setCols] = useState([]);
+  const [rows, setRows] = useState([]);
   const [loading, isLoading] = useState(true);
 
   useEffect(() => {
@@ -15,7 +15,8 @@ const DataSnippets = ({ entity }) => {
         });
         if (!response.ok) throw new Error(`Request failed: ${response.status}`);
         const data = await response.json();
-        setCols(data);
+        setRows(data);
+        console.log(headers);
         console.log(data);
       } catch(error) {
         console.log(error);
@@ -24,14 +25,27 @@ const DataSnippets = ({ entity }) => {
       }
     }
     loadData();
-
   },[entity]);
+
+  const headers = rows.length > 0 ? Object.keys(rows[0]) : [];
+  while (headers.length > 7){
+    headers.pop();
+  }
+  console.log(headers);
 
   return (
     <main className=''>
-      <div className="grid grid-flow-col border-t border-b border-r">
-        {cols.map((col) => 
-          <p key={col} className="border-l">{col.EmployeeID}</p>
+      <div className='grid' 
+      style={{ gridTemplateColumns: `repeat(${headers.length || 1}, minmax(0, 1fr))` }}>
+        {headers.map((h) => (
+          <h2 className="border-b" key={h}> 
+            {h}
+          </h2>
+        ))}
+      </div>
+      <div className="flex-1 overflow-y-auto">
+        {rows.map((row) => 
+          <DataSnippet key={row[idField]} entity={entity} idField={idField} row={row} headers={headers}/>
         )}
       </div>
       <div className="" >
