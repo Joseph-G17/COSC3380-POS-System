@@ -16,7 +16,7 @@ const server = http.createServer((req, res) => {
   else if(req.url === '/api/login' && req.method === 'POST'){
     getEmployeeLogin(req, res);
   }
-  else if(req.url.match(/^\/api\/employees\/([0-9]+)$/) && req.method === 'GET'){ //req.params.id equivalent
+  else if(req.url.match(/^\/api\/Employees\/([0-9]+)$/) && req.method === 'GET'){ //req.params.id equivalent
     const id = req.url.split('/')[3]; // api/employee/1
     getEmployee(req, res, id);
   }

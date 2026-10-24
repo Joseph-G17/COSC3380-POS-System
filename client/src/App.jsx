@@ -35,10 +35,10 @@ const App = () => {
           <Route index element={<Navigate to="manage/Employee" replace />} />
           <Route path='manage/:entity' element={<HomePage /> } />
           <Route path='forms/:form' element={<FormsPage />}/>
-          <Route path='clock-in' element={<ClockInPage />}/>
-          <Route path='profile' element={<EditProfilePage />}/>
+          <Route path='clock-in/:user' element={<ClockInPage />}/>
+          <Route path='profile/:user' element={<EditProfilePage />}/>
           <Route path='inspectData/:entity/:id' element={<InspectDataPage />}/>
-          <Route path='updateData' element={<UpdateDataPage />}/>
+          <Route path='updateData/:entity/:id' element={<UpdateDataPage />}/>
         </Route>
         
         <Route path='/cashier' element={<CashierMainLayout />}>

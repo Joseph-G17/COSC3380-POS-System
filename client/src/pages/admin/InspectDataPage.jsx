@@ -8,11 +8,11 @@ const InspectDataPage = () => {
   const {id} = useParams();
 
   return (
-    <>
-      <InspectHeader entity={entity} id={id} />
-      <InspectDescription />
-      <InspectButtons entity={entity} id={id} />
-    </>
+    <section className="inline-flex">
+      <InspectHeader entity={entity} />
+      <InspectDescription entity={entity} id={id}/>
+      <InspectButtons />
+    </section>
   )
 }
 

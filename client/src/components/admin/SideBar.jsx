@@ -6,10 +6,6 @@ const SideBar = () => {
   const entities = ['Employees', 'Orders', 'Items', 'Discounts', 'Sales', 'Department', 'Returns'];
   const forms = ['Sales Form', 'Inventory Form', 'Employee Form'];
 
-  const dbName = (text) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-
-
-
   return (
     <aside className='row-span-2 border'>
       <div className='p-7 mb-1 inline-flex items-center'>

@@ -13,15 +13,6 @@ function findAll(){
   return query('SELECT * FROM Employees');
 }
 
-
-//SELECT
-function findByID(id) {
-  return new Promise((resolve, reject) => {
-    const employee = employees.find((e) => e.EmployeeID === id)
-    resolve(employee);
-  })
-}
-
 function findEmployeeLogin(username){
   const sql = 'SELECT l.employeeID, l.employeePassword, e.Role FROM \`employee logins\` as l JOIN employees as e ON e.employeeID = l.employeeID WHERE l.employeeUsername = ?'
   return query(sql, username);
@@ -56,7 +47,6 @@ function remove(id) {
 
 module.exports = {
   findAll,
-  findByID,
   findEmployeeLogin,
   create,
   update,

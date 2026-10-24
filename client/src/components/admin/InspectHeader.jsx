@@ -1,9 +1,7 @@
-import React from 'react'
-
-const InspectHeader = (entity, id) => {
+const InspectHeader = ({entity}) => {
   return (
     <div>
-      THIS IS INSPECT HEADER
+      <h1 className="text-2xl bold">Manage {entity}</h1>
     </div>
   )
 }

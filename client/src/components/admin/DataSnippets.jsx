@@ -16,8 +16,6 @@ const DataSnippets = ({ entity, idField }) => {
         if (!response.ok) throw new Error(`Request failed: ${response.status}`);
         const data = await response.json();
         setRows(data);
-        console.log(headers);
-        console.log(data);
       } catch(error) {
         console.log(error);
       }finally {
@@ -31,7 +29,6 @@ const DataSnippets = ({ entity, idField }) => {
   while (headers.length > 7){
     headers.pop();
   }
-  console.log(headers);
 
   return (
     <main className=''>
