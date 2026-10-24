@@ -1,18 +1,20 @@
-// Reuse the shared query helper and its configured MySQL connection pool.
+// Load the shared query helper; it sends SQL through the configured MySQL connection pool.
 const { query } = require("../sqlConnecter");
 
-// Keep the account lookup here; the controller handles the HTTP response.
+// The controller supplies username; this model finds the account without sending an HTTP response.
 function findCustomerLogin(username) {
-  // Fetch only the customer ID and stored password value needed for login.
+  // SELECT reads only CustomerID and the stored password value; WHERE matches the username.
+  // Backticks surround the table name with spaces; ? receives the username value below.
   const sql =
     "SELECT CustomerID, CustomerPassword FROM `Customer Logins` WHERE CustomerUsername = ?";
 
-  // Supply username separately for the SQL ? placeholder instead of joining SQL text.
-  // Return the Promise so the controller can await the result rows.
+  // [username] supplies the value for ? instead of joining user input into the SQL text.
+  // query returns a Promise; return passes it to the controller so await can receive the rows.
+  // No matching row gives an empty array; this function does not verify the password.
   return query(sql, [username]);
 }
 
-// Make the lookup function available to the customer controller.
+// Export the function so customerController can require it and call findCustomerLogin(username).
 module.exports = {
   findCustomerLogin,
 };

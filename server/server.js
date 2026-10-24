@@ -15,8 +15,11 @@ const { getDiscounts } = require("./controllers/discountsController");
 const { getSales } = require("./controllers/salesController");
 const { getReturns } = require("./controllers/returnsController");
 
-//import the getProducts function from the OnlineStoreController
+// Load the product handler; the products route below passes requests to this function.
+// Its controller gets Items rows through the model and sends JSON to ProductList.
 const { getProducts } = require("./controllers/OnlineStoreController");
+// Load the category handler that sends real checkbox IDs and names to OnlineStorePage.
+const { getCategories } = require("./controllers/categoriesController");
 
 const server = http.createServer((req, res) => {
   if (req.url === "/api/employees" && req.method === "GET") {
@@ -46,9 +49,15 @@ const server = http.createServer((req, res) => {
     deleteEmployee(req, res, id);
   }
 
-  //for online store products
+  // ProductList fetches /api/products; both the exact URL and GET method must match.
+  // This branch sends product loading to its handler instead of the later routes.
   else if (req.url === "/api/products" && req.method === "GET") {
+    // Pass the current request and response; the controller reads rows and ends the reply.
     getProducts(req, res);
+  } else if (req.url === "/api/categories" && req.method === "GET") {
+    // OnlineStorePage requests this exact URL with GET to load Sidebar checkbox data.
+    // Pass req and res to the controller; it reads categories and sends the JSON reply.
+    getCategories(req, res);
   } else if (req.url == "/api/orders" && req.method === "GET") {
     getOrders(req, res);
   } else if (req.url == "/api/sales" && req.method === "GET") {

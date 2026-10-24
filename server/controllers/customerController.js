@@ -1,29 +1,33 @@
-// Use the customer-specific model for the database lookup.
+// Load the Customer model; the model reads the database and this controller handles HTTP.
 const Customers = require('../models/customerModel');
 
-// Reuse the helper that reads the incoming HTTP request body.
+// Load the body reader because POST data can arrive in several parts.
 const { getPostData } = require('../utilities');
 
-// In progress: reads login data and handles an unknown username.
-// TODO: Add input validation and error handling before connecting this handler.
+// WIP: reads login fields and handles an unknown username; it does not verify the password yet.
+// This function is not exported or connected in server.js, so no route calls it yet.
+// TODO: Add input validation and error handling before connecting the route.
+// Once connected, the server supplies req (incoming data) and res (the reply) here.
 async function getCustomerLogin(req, res) {
-    // Wait for the complete request body, which is still JSON text.
+    // Wait for the complete body; the result is still JSON text, not an object yet.
     const body = await getPostData(req);
-    // Convert the JSON text to an object and extract the submitted login fields.
+    // JSON.parse makes an object; {} takes its fields into the username and password variables.
+    // password is only read into a variable here; it is not compared or verified.
     const { username, password } = JSON.parse(body);
-    // Find the account by username; this lookup does not verify the password.
+    // Pass username to the model; await waits for matching rows, without checking the password.
     const rows = await Customers.findCustomerLogin(username);
-    // Results are an array; index 0 is undefined when no account was found.
+    // Use the first row as login; rows[0] is undefined when the result array is empty.
     const login = rows[0];
-    // Stop when no account matches and use a generic login failure message.
+    // !login is true when no row was found; use a general login failure message.
     if(!login){
-        // Tell the client this is a JSON response for a failed login attempt.
+        // Send HTTP 401 with JSON; this branch only handles a username that was not found.
         res.writeHead(401, {'Content-Type': 'application/json'});
-        // Finish the response and return so the handler stops here.
+        // Send JSON text and end the response; return stops this handler here.
         return res.end(JSON.stringify({message: 'Invalid username or password'}));
     }
-    // TODO: Agree on password storage and verification with the team.
-    // TODO: Verify the password before sending a success response without password data.
-    // TODO: Export this handler and connect its route once the login flow is complete.
+    // A found username reaches here, but the password is unchecked and no success response is sent.
+    // TODO: Agree with the team on password storage and verification; no hash/verify exists here yet.
+    // TODO: Verify the password before returning success; never send password data to the frontend.
+    // TODO: Complete this flow, then export the handler and connect its route in server.js.
 }
 
