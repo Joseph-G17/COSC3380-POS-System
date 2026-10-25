@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import TitleHeader from "../../components/admin/TitleHeader"
 import DataSnippets from "../../components/admin/DataSnippets"
 import { useParams } from "react-router-dom";
@@ -15,12 +16,12 @@ const ID_FIELDS = {
 const HomePage = () => {
   const {entity} = useParams();
   const idField = ID_FIELDS[entity];
-
+  const [refresh, setRefresh] = useState(0);
 
   return (
     <section className='border-b border-r'>
-      <TitleHeader title={entity} showAdd/>
-      <DataSnippets entity={entity} idField={idField}/>
+      <TitleHeader entity={entity} showAdd onCreated={() => setRefresh(refresh + 1)}/>
+      <DataSnippets entity={entity} idField={idField} refresh={refresh}/>
     </section>
   )
 }

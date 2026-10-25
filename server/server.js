@@ -1,6 +1,6 @@
 const http = require('http');
 
-const { getEmployees, getEmployeeLogin,  getEmployee, createEmployee, updateEmployee, deleteEmployee } = require('./controllers/employeesController')
+const { getEmployees, getEmployeeLogin } = require('./controllers/employeesController')
 const { getOrders } = require('./controllers/ordersController');
 const { getDepartments } = require('./controllers/departmentsController');
 const { getInventory } = require('./controllers/inventoryController');
@@ -8,50 +8,36 @@ const { getDiscounts } = require('./controllers/discountsController');
 const { getSales } = require('./controllers/salesController');
 const { getReturns } = require('./controllers/returnsController');
 const { getItems } = require('./controllers/itemController')
+const { getEntities, getEntity, updateEntity, deleteEntity, getEntityColumns, createEntity } = require('./controllers/universalController');
 
 const server = http.createServer((req, res) => {
-  if(req.url === '/api/Employees' && req.method === 'GET'){
-    getEmployees(req, res);
-  } 
-  else if(req.url === '/api/login' && req.method === 'POST'){
+  if(req.url === '/api/login' && req.method === 'POST'){
     getEmployeeLogin(req, res);
   }
-  else if(req.url.match(/^\/api\/Employees\/([0-9]+)$/) && req.method === 'GET'){ //req.params.id equivalent
-    const id = req.url.split('/')[3]; // api/employee/1
-    getEmployee(req, res, id);
+  else if(req.url.match(/^\/api\/([A-Za-z]+)$/) && req.method === 'GET'){
+    const entity = req.url.split('/')[2];
+    getEntities(req, res, entity);
   }
-  else if(req.url === '/api/employees' && req.method === 'POST'){
-    createEmployee(req, res);
+  else if(req.url.match(/^\/api\/([A-Za-z]+)\/([0-9]+)$/) && req.method === 'GET'){
+    const [, , entity, id] = req.url.split('/');
+    getEntity(req, res, entity, id);
   }
-  else if(req.url.match(/^\/api\/employees\/([0-9]+)$/) && req.method === 'PUT'){
-    const id = req.url.split('/')[3]; // api/employee/1
-    updateEmployee(req, res, id);
+  else if(req.url.match(/^\/api\/([A-Za-z]+)\/columns$/) && req.method === 'GET'){
+    const entity = req.url.split('/')[2]; // ['', 'api', 'Employees', 'columns']
+    getEntityColumns(req, res, entity);
   }
-  else if(req.url.match(/^\/api\/employees\/([0-9]+)$/) && req.method === 'DELETE'){
-    const id = req.url.split('/')[3]; // api/employee/1
-    deleteEmployee(req, res, id);
+  else if(req.url.match(/^\/api\/([A-Za-z]+)$/) && req.method === 'POST'){
+    const entity = req.url.split('/')[2];
+    createEntity(req, res, entity);
   }
-  else if(req.url == '/api/Orders' && req.method === 'GET'){
-    getOrders(req, res);
+  else if(req.url.match(/^\/api\/([A-Za-z]+)\/([0-9]+)$/) && req.method === 'PUT'){
+    const [, , entity, id] = req.url.split('/'); // ['', 'api', 'Employees', '1']
+    updateEntity(req, res, entity, id);
   }
-  else if(req.url == '/api/Items' && req.method === 'GET'){
-    getItems(req, res);
-  }
-  else if(req.url == '/api/Sales' && req.method === 'GET'){
-    getSales(req, res);
-  }
-  else if(req.url == '/api/Departments' && req.method === 'GET'){
-    getDepartments(req, res);
-  }
-  else if(req.url == '/api/Inventory' && req.method === 'GET'){
-    getInventory(req, res);
-  }
-  else if(req.url == '/api/Discounts' && req.method === 'GET'){
-    getDiscounts(req, res);
-  }
-  else if(req.url == '/api/Returns' && req.method === 'GET'){
-    getReturns(req, res);
-  }
+  else if(req.url.match(/^\/api\/([A-Za-z]+)\/([0-9]+)$/) && req.method === 'DELETE'){
+    const [, , entity, id] = req.url.split('/'); 
+    deleteEntity(req, res, entity, id);
+  } 
   else {
     res.writeHead(404,{'Content-Type': 'application/json' });
     res.end(JSON.stringify({message: '404: Route Not Found'}));

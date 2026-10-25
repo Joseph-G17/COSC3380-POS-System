@@ -1,7 +1,7 @@
 import {useEffect, useState} from 'react'
 import DataSnippet from './DataSnippet';
 
-const DataSnippets = ({ entity, idField }) => {
+const DataSnippets = ({ entity, idField, refresh}) => {
   //let cols will be the main attributes of that entity
   const [rows, setRows] = useState([]);
   const [loading, isLoading] = useState(true);
@@ -23,7 +23,7 @@ const DataSnippets = ({ entity, idField }) => {
       }
     }
     loadData();
-  },[entity]);
+  },[entity, refresh]);
 
   const headers = rows.length > 0 ? Object.keys(rows[0]) : [];
   while (headers.length > 7){
