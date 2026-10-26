@@ -9,7 +9,10 @@ import ClockInPage from './pages/admin/ClockInPage';
 import EditProfilePage from './pages/admin/EditProfilePage';
 import InspectDataPage from './pages/admin/InspectDataPage';
 
-import OnlineStoreLayout from './layouts/OnlineStoreLayout';
+// The shared layout keeps one cart while these two customer pages change.
+import OnlineStoreLayout from './layouts/OnlineStoreLayout'; // Holds the shared customer cart and navigation.
+import OnlineStorePage from './pages/onlinestore/OnlineStorePage'; // Shows product search and category filters.
+import CheckoutPage from './pages/onlinestore/CheckoutPage'; // Reads that same cart to show the order summary.
 
 import CashierMainLayout from './layouts/CashierMainLayout';
 import CashierCheckout from './pages/cashier/cashiercheckout';
@@ -20,13 +23,18 @@ import CashierViewSales from './pages/cashier/cashierviewsales';
 
 const App = () => {
   const router = createBrowserRouter(
-    // Group storefront and admin routes in one router using a JSX fragment.
+    // The router chooses a page by URL; <> groups the routes without adding an HTML element.
     createRoutesFromElements(
       <>
-        {/* Render the customer storefront at the site's root URL. */}
-        <Route path='/' element={<OnlineStoreLayout />} />
+        {/* The shared layout stays mounted when switching between / and /checkout. */}
+        <Route path='/' element={<OnlineStoreLayout />}>
+          {/* index selects the shop when the full URL path is /. */}
+          <Route index element={<OnlineStorePage />} />
+          {/* This child opens /checkout inside Layout; F5 restores its cart from this tab's saved data. */}
+          <Route path='checkout' element={<CheckoutPage />} />
+        </Route>
 
-        {/* Login for Employee's and Customer's */}
+        {/* Store Login/Account opens this employee login page; customer sign-in is still unfinished. */}
         <Route path='/login' element={<LoginLayout />} />
 
         {/* Preserve the existing admin layout and its default page. */}

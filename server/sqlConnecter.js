@@ -7,7 +7,7 @@ var pool = mysql.createPool({
   user: process.env.DB_USER ||'root',
   password: process.env.DB_PASSWORD || '',
   database: process.env.DB_DATABASE || 'mydb',
-  
+
   ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined
 
 });

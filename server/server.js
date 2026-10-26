@@ -4,9 +4,24 @@ const { getEmployeeLogin } = require('./controllers/employeesController')
 const { getEntities, getEntity, updateEntity, deleteEntity, getEntityColumns, createEntity } = require('./controllers/universalController');
 const { getReport } = require('./controllers/reportsController')
 
+// Load the customer handlers; their specific routes must precede generic entity routes.
+const { getProducts } = require('./controllers/OnlineStoreController');
+const { getCategories } = require('./controllers/categoriesController');
+
 const handler = (req, res) => {
   if(req.url === '/api/login' && req.method === 'POST'){
     getEmployeeLogin(req, res);
+  }
+  // ProductList and Sidebar need these customer APIs before generic table matching.
+  else if(req.url === '/api/products' && req.method === 'GET'){
+    getProducts(req, res);
+  }
+  else if(req.url === '/api/categories' && req.method === 'GET'){
+    getCategories(req, res);
+  }
+  else if(req.url === '/api/sales' && req.method === 'GET'){
+    // AnnouncementBar keeps its lowercase URL; use the shared controller's Sales entity.
+    getEntities(req, res, 'Sales');
   }
   else if(req.url.match(/^\/api\/([A-Za-z]+)$/) && req.method === 'GET'){
     const entity = req.url.split('/')[2];
