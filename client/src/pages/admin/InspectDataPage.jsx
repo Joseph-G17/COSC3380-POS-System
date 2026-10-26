@@ -1,7 +1,6 @@
 import { useParams } from "react-router-dom"
 import InspectHeader from "../../components/admin/InspectHeader";
 import InspectDescription from "../../components/admin/InspectDescription";
-import InspectButtons from "../../components/admin/InspectButtons";
 
 const InspectDataPage = () => {
   const {entity} = useParams();

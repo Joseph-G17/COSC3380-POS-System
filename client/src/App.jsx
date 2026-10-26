@@ -39,7 +39,7 @@ const App = () => {
 
         {/* Preserve the existing admin layout and its default page. */}
         <Route path='/admin' element={<AdminMainLayout /> }>
-          <Route index element={<Navigate to="manage/Employee" replace />} />
+          <Route index element={<Navigate to="manage/Employees" replace />} />
           <Route path='inspectData/:entity/:id' element={<InspectDataPage />}/>
           <Route path='manage/:entity' element={<HomePage /> } />
           <Route path='reports/:report' element={<ReportsPage />}/>

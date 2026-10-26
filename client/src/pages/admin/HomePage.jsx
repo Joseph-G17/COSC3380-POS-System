@@ -7,10 +7,13 @@ const ID_FIELDS = {
     Employees: 'EmployeeID',
     Orders: 'OrderID',
     Items: 'ItemID',
+    'Item Categories': 'ItemCategoryID',
     Discounts: 'DiscountID',
     Sales: 'SaleID',
     Departments: 'DepartmentID',
-    Returns: 'ReturnID'
+    Returns: 'ReturnID',
+    Inventory: 'InventoryID',
+    Customers: 'CustomerID'
   };
 
 const HomePage = () => {
