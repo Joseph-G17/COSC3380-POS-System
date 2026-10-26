@@ -3,8 +3,8 @@ import { NavLink, useNavigate } from "react-router-dom";
 const SideBar = () => {
   const navigate = useNavigate();
 
-  const entities = ['Employees', 'Orders', 'Items', 'Discounts', 'Sales', 'Department', 'Returns'];
-  const forms = ['Sales Form', 'Inventory Form', 'Employee Form'];
+  const entities = ['Employees', 'Orders', 'Items', 'Discounts', 'Sales', 'Department', 'Returns', 'Inventory'];
+  const reports = ['SalesSummary', 'StockReport', 'EmployeeSales', 'CustomerPurchases'];
 
   return (
     <aside className='row-span-2 border'>
@@ -25,12 +25,12 @@ const SideBar = () => {
       </div>
       <h2 className="place-self-center text-xl underline">Data Reports</h2>
       <div className='grid gap-y-0.5'>
-        {forms.map((form) => 
+        {reports.map((report) => 
           <NavLink className='p-4 button-highlight focus:bg-amber-100'
-            key={form}
-            to={`/admin/forms/${form}`}
+            key={report}
+            to={`/admin/reports/${report}`}
           >
-            Manage {form}
+            Manage {report}
           </NavLink>
         )}  
       </div>

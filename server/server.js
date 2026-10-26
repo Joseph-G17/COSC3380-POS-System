@@ -1,14 +1,8 @@
 const http = require('http');
 
-const { getEmployees, getEmployeeLogin } = require('./controllers/employeesController')
-const { getOrders } = require('./controllers/ordersController');
-const { getDepartments } = require('./controllers/departmentsController');
-const { getInventory } = require('./controllers/inventoryController');
-const { getDiscounts } = require('./controllers/discountsController');
-const { getSales } = require('./controllers/salesController');
-const { getReturns } = require('./controllers/returnsController');
-const { getItems } = require('./controllers/itemController')
+const { getEmployeeLogin } = require('./controllers/employeesController')
 const { getEntities, getEntity, updateEntity, deleteEntity, getEntityColumns, createEntity } = require('./controllers/universalController');
+const { getReport } = require('./controllers/reportsController')
 
 const server = http.createServer((req, res) => {
   if(req.url === '/api/login' && req.method === 'POST'){
@@ -38,6 +32,17 @@ const server = http.createServer((req, res) => {
     const [, , entity, id] = req.url.split('/'); 
     deleteEntity(req, res, entity, id);
   } 
+  else if(req.url.match(/^\/api\/reports\/([A-Za-z]+)/) && req.method === 'GET'){
+    const url = new URL(req.url, 'http://localhost');
+    const report = url.pathname.split('/')[3]; // ['', 'api', 'reports', 'SalesSummary']
+
+    const filters = {};
+    url.searchParams.forEach((value, key) => {
+      filters[key] = value;
+    });
+
+    getReport(req, res, report, filters);
+  }
   else {
     res.writeHead(404,{'Content-Type': 'application/json' });
     res.end(JSON.stringify({message: '404: Route Not Found'}));

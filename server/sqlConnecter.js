@@ -6,7 +6,9 @@ var pool = mysql.createPool({
   host: process.env.DB_HOST ||'127.0.0.1',
   user: process.env.DB_USER ||'root',
   password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_DATABASE || 'mydb'
+  database: process.env.DB_DATABASE || 'mydb',
+  
+  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined
 
 });
 
@@ -16,7 +18,6 @@ function query(sql, params){
   return new Promise((resolve, reject) => {
     pool.query(sql, params, (error, results) => {
       if(error) return reject(error);
-      console.log('Query Confirmed!')
       resolve(results);
     });
   });

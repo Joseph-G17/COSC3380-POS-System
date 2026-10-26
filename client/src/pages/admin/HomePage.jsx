@@ -15,12 +15,13 @@ const ID_FIELDS = {
 
 const HomePage = () => {
   const {entity} = useParams();
+  const {report} = useParams();
   const idField = ID_FIELDS[entity];
   const [refresh, setRefresh] = useState(0);
 
   return (
     <section className='border-b border-r'>
-      <TitleHeader entity={entity} showAdd onCreated={() => setRefresh(refresh + 1)}/>
+      <TitleHeader entity={entity} report={report} showAdd onCreated={() => setRefresh(refresh + 1)}/>
       <DataSnippets entity={entity} idField={idField} refresh={refresh}/>
     </section>
   )

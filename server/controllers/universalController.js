@@ -1,7 +1,7 @@
 const Universal = require('../models/universalModel');
 const { getPostData } = require('../utilities');
 
-const ENTITIES = ['Employees', 'Orders', 'Items', 'Discounts', 'Sales', 'Departments', 'Returns'];
+const ENTITIES = ['Employees', 'Orders', 'Items', 'Discounts', 'Sales', 'Departments', 'Returns', 'Inventory'];
 
 // desc: Gets all rows of any entity
 // route: GET /api/:entity
@@ -41,7 +41,7 @@ async function getEntity(req, res, entity, id) {
     res.end(JSON.stringify(rows));
   } catch (error) {
     console.log(error);
-    res.writeHead(500, {'Content-Type': 'application/json'});
+    res.writeHead(404, {'Content-Type': 'application/json'});
     res.end(JSON.stringify({ message: 'Could not load data'}));
   }
 }
@@ -116,7 +116,7 @@ async function getEntityColumns(req, res, entity) {
     res.end(JSON.stringify(columns));
   } catch (error) {
     console.log(error);
-    res.writeHead(500, {'Content-Type': 'application/json'});
+    res.writeHead(404, {'Content-Type': 'application/json'});
     res.end(JSON.stringify({ message: 'Could not load columns'}));
   }
 }
@@ -139,7 +139,7 @@ async function createEntity(req, res, entity) {
     res.end(JSON.stringify({ message: `${entity} ${result.insertId} created!`, id: result.insertId }));
   } catch (error) {
     console.log(error);
-    res.writeHead(400, {'Content-Type': 'application/json'});
+    res.writeHead(404, {'Content-Type': 'application/json'});
     res.end(JSON.stringify({ message: error.sqlMessage || 'Create failed'}));
   }
 }
