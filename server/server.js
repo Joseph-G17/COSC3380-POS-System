@@ -45,7 +45,7 @@ const handler = (req, res) => {
   }
   else {
     res.writeHead(404,{'Content-Type': 'application/json' });
-    res.end(JSON.stringify({message: '404: Route Not Found'}));
+    res.end(JSON.stringify({message: '404: Route Not Found', url: req.url, method: req.method}));
   }
 }
 
