@@ -1,7 +1,7 @@
 const mysql = require('mysql2');
 
 var pool = mysql.createPool({
-  connectionLimit: Number(process.env.DB_CONNECTIONLIMIT) || 3,
+  connectionLimit: Number(process.env.DB_CONNECTIONLIMIT) || 2,
   port: Number(process.env.DB_PORT) || 3306,
   host: process.env.DB_HOST ||'127.0.0.1',
   user: process.env.DB_USER ||'root',

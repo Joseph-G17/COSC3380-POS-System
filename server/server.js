@@ -4,7 +4,7 @@ const { getEmployeeLogin } = require('./controllers/employeesController')
 const { getEntities, getEntity, updateEntity, deleteEntity, getEntityColumns, createEntity } = require('./controllers/universalController');
 const { getReport } = require('./controllers/reportsController')
 
-const server = http.createServer((req, res) => {
+const handler = (req, res) => {
   if(req.url === '/api/login' && req.method === 'POST'){
     getEmployeeLogin(req, res);
   }
@@ -47,13 +47,17 @@ const server = http.createServer((req, res) => {
     res.writeHead(404,{'Content-Type': 'application/json' });
     res.end(JSON.stringify({message: '404: Route Not Found'}));
   }
-})
+}
 
+module.exports = handler;
 /*  
 EXPRESS ALTS: 
 - app.get('/specificURL', () => { }) 
 - /api/employees/:id == req.params.id      
 */
-
-const PORT = process.env.PORT || 5000; //see if there is an environment variable
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+if (require.main === module) {
+  const PORT = process.env.PORT || 5000;
+  http.createServer(handler).listen(PORT, () => console.log(`Server running on port ${PORT}`));
+}
+//const PORT = process.env.PORT || 5000; //see if there is an environment variable
+//server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
