@@ -19,7 +19,7 @@ const LoginLayout = () => {
       const currentEmployeeID = data.employeeID;
 
       if(data.Role == 0)
-        navigate('/admin/profile');
+        navigate('/admin');
       else if(data.Role == 1)
         navigate('/admin');
       else

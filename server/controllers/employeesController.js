@@ -38,7 +38,7 @@ async function getEmployeeLogin(req, res){
 // route: GET /api/employee/:EmployeeID
 async function getEmployee(req, res, id) {
   try {
-    const employee = await Employees.findByID(id);
+    const employee = await Universal.findOne('Employees', id)
 
     if(!employee) {
       res.writeHead(404, {'Content-Type': 'application/json'});
@@ -81,7 +81,6 @@ async function createEmployee(req, res){
 // route: PUT /api/employees/id
 async function updateEmployee(req, res, id){
   try {
-    const employee = await Employees.findByID(id);
 
     if(!employee) {
       res.writeHead(404, {'Content-Type': 'application/json'});
@@ -111,7 +110,7 @@ async function updateEmployee(req, res, id){
 // route: DELETE /api/employee/:EmployeeID
 async function deleteEmployee(req, res, id) {
   try {
-    const employee = await Employees.findByID(id);
+    //const employee = await Employees.findByID(id);
 
     if(!employee) {
       res.writeHead(404, {'Content-Type': 'application/json'});

@@ -4,11 +4,10 @@ import LoginLayout from './layouts/LoginLayout'
 
 import AdminMainLayout from './layouts/AdminMainLayout';
 import HomePage from './pages/admin/HomePage';
-import FormsPage from './pages/admin/FormsPage';
+import ReportsPage from './pages/admin/ReportsPage';
 import ClockInPage from './pages/admin/ClockInPage';
 import EditProfilePage from './pages/admin/EditProfilePage';
 import InspectDataPage from './pages/admin/InspectDataPage';
-import UpdateDataPage from './pages/admin/UpdateDataPage';
 
 import OnlineStoreLayout from './layouts/OnlineStoreLayout';
 
@@ -33,12 +32,11 @@ const App = () => {
         {/* Preserve the existing admin layout and its default page. */}
         <Route path='/admin' element={<AdminMainLayout /> }>
           <Route index element={<Navigate to="manage/Employee" replace />} />
+          <Route path='inspectData/:entity/:id' element={<InspectDataPage />}/>
           <Route path='manage/:entity' element={<HomePage /> } />
-          <Route path='forms/:form' element={<FormsPage />}/>
-          <Route path='clock-in' element={<ClockInPage />}/>
-          <Route path='profile' element={<EditProfilePage />}/>
-          <Route path='inspectData' element={<InspectDataPage />}/>
-          <Route path='updateData' element={<UpdateDataPage />}/>
+          <Route path='reports/:report' element={<ReportsPage />}/>
+          <Route path='clock-in/:user' element={<ClockInPage />}/>
+          <Route path='profile/:user' element={<EditProfilePage />}/>
         </Route>
         
         <Route path='/cashier' element={<CashierMainLayout />}>
