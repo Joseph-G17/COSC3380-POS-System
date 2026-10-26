@@ -10,7 +10,7 @@ function findAllCategories() {
   // Backticks surround the table name because item categories contains a space.
   // Sort by name, then ID for equal names, so the category list has a consistent order.
   const sql =
-    "SELECT ItemCategoryID, CategoryName FROM `item categories` ORDER BY CategoryName, ItemCategoryID";
+    "SELECT ItemCategoryID, CategoryName FROM `Item Categories` ORDER BY CategoryName, ItemCategoryID";
   // Start the read and return its Promise to the controller, where await receives the rows.
   // No input values are needed because this query reads every category without a filter.
   return query(sql);
