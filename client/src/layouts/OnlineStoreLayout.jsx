@@ -2,7 +2,10 @@ import AnnouncementBar from "../components/onlinestore/AnnouncementBar"; // Acti
 import Navbar from "../components/onlinestore/Navbar"; // Search bar, cart button and account controls.
 import Cart from "../components/onlinestore/Cart"; // Displays the cart and its controls.
 import { useEffect, useState } from "react"; // State remembers the cart; an effect saves applied changes.
-import { loadCartItems, saveCartItems } from "../components/onlinestore/cartStorage"; // Read and write this tab's cart.
+import {
+  loadCartItems,
+  saveCartItems,
+} from "../components/onlinestore/cartStorage"; // Read and write this tab's cart.
 import { Outlet, useLocation, useNavigate } from "react-router-dom"; // Show a child page and change its URL without reloading.
 
 // This shared Layout stays mounted on the shop and checkout pages, keeping the same cart.
@@ -16,9 +19,12 @@ const OnlineStoreLayout = () => {
   // Reading before the first save prevents an empty initial array from replacing saved items.
   const [cartItems, setCartItems] = useState(loadCartItems);
   // React runs this after the cart changes, including after Minus removes the last unit or Clear.
-  useEffect(function () {
-    saveCartItems(cartItems); // Save the latest array; Checkout derives its total from these rows.
-  }, [cartItems]); // Run again only when React receives a different cartItems array.
+  useEffect(
+    function () {
+      saveCartItems(cartItems); // Save the latest array; Checkout derives its total from these rows.
+    },
+    [cartItems],
+  ); // Run again only when React receives a different cartItems array.
   // false means initially closed; this setter changes visibility, separate from the items.
   const [isCartOpen, setIsCartOpen] = useState(false);
   // Each time Layout runs, calculate the total from current items; no extra state is needed.
@@ -31,7 +37,8 @@ const OnlineStoreLayout = () => {
   // Navbar sends each typed value here; open the shop when searching from Checkout.
   function changeSearchText(value) {
     setSearchText(value); // React sends this value back to Navbar and the product filter.
-    if (location.pathname !== "/") { // Results live on the shop page.
+    if (location.pathname !== "/") {
+      // Results live on the shop page.
       navigate("/"); // Change the child page while keeping Layout and its cart.
     }
   }
@@ -42,7 +49,8 @@ const OnlineStoreLayout = () => {
     setSelectedCategoryIds(function (currentIds) {
       const updatedIds = []; // Build a replacement selection without changing the old array.
       let wasSelected = false; // Remember whether this click should remove an existing ID.
-      for (let i = 0; i < currentIds.length; i++) { // Visit each currently selected checkbox ID.
+      for (let i = 0; i < currentIds.length; i++) {
+        // Visit each currently selected checkbox ID.
         if (currentIds[i] === id) {
           wasSelected = true; // Skip this ID to uncheck it.
         } else {
@@ -101,7 +109,8 @@ const OnlineStoreLayout = () => {
     setCartItems(function (currentItems) {
       const updateItems = []; // This new array will contain only the rows we keep.
 
-      for (let i = 0; i < currentItems.length; i++) { // Visit each current cart row.
+      for (let i = 0; i < currentItems.length; i++) {
+        // Visit each current cart row.
         // A different ID means this is another product: keep its row unchanged.
         if (currentItems[i].ItemID !== itemID) {
           updateItems.push(currentItems[i]); // push appends one entry to the new array.
@@ -151,7 +160,16 @@ const OnlineStoreLayout = () => {
       />
 
       {/* Child pages share cart data; the shop also receives current search and category actions. */}
-      <Outlet context={{ cartItems, addToCart, searchText, selectedCategoryIds, toggleCategory, clearCategories }} />
+      <Outlet
+        context={{
+          cartItems,
+          addToCart,
+          searchText,
+          selectedCategoryIds,
+          toggleCategory,
+          clearCategories,
+        }}
+      />
       {/* items receives the cartItems array; Plus/minus/Clear actions call the functions held in Layout. */}
       {/* Cart uses the flag to slide and calls the supplied close action without clearing items. */}
       <Cart
