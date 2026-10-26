@@ -30,10 +30,10 @@ const LoginLayout = () => {
       // This local value is not used below and does not save a signed-in session.
       const currentEmployeeID = data.employeeID;
 
-      // Follow the current employee-role paths: 0 -> profile, 1 -> admin, others -> store.
+      // Follow the current employee-role paths: 0 or 1 -> admin, others -> store.
       // Returning to the store here does not authenticate a customer account.
       if(data.Role == 0)
-        navigate('/admin/profile');
+        navigate('/admin');
       else if(data.Role == 1)
         navigate('/admin');
       else
