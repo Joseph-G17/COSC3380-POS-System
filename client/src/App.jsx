@@ -27,7 +27,7 @@ const App = () => {
     // The router chooses a page by URL; <> groups the routes without adding an HTML element.
     createRoutesFromElements(
       <>
-        {/* Layout stays mounted; only its child page changes, so cart state is preserved. */}
+        {/* The shared layout stays mounted when switching between / and /checkout. */}
         <Route path='/' element={<OnlineStoreLayout />}>
           {/* index selects the shop when the full URL path is /. */}
           <Route index element={<OnlineStorePage />} />
@@ -35,7 +35,7 @@ const App = () => {
           <Route path='checkout' element={<CheckoutPage />} />
         </Route>
 
-        {/* /login currently calls the employee login API; customer login is still unfinished. */}
+        {/* Store Login/Account opens this employee login page; customer sign-in is still unfinished. */}
         <Route path='/login' element={<LoginLayout />} />
 
         {/* Preserve the existing admin layout and its default page. */}

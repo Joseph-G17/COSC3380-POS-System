@@ -2,15 +2,15 @@
  * Online Store header, displayed by OnlineStoreLayout.
  * Layout sends cart controls, search text and the function that changes the search.
  * Search filters the shop's products by name and animates a hint while empty.
- * Sign Up/Login have no action yet; the small avatar appears based on screen width.
+ * Login and the compact account link open /login; Sign Up has no action yet.
  * Tailwind from index.css controls layout: one row above 800px; search moves down at <=800px.
  * At <=480px, smaller gaps and padding help the header fit the screen.
  */
 
 // React supplies these two named hooks: useState remembers local values; useEffect manages browser work.
 import { useEffect, useState } from "react";
-// React Router supplies Link; it changes the child page without reloading the shared Layout.
-import { Link } from "react-router-dom"; // The logo below uses this component to return to "/".
+// React Router supplies Link; it changes pages without reloading the browser document.
+import { Link } from "react-router-dom"; // The logo returns to "/"; account links open "/login".
 
 // The full hint text; change it here to update the typing animation.
 const SEARCH_HINT = "What are you looking for?";
@@ -135,7 +135,7 @@ const Navbar = ({ totalItemsQuantity, onOpenCart, isCartOpen, searchText, onSear
     <nav className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-4 px-6 py-4 [@media(480px<width<=800px)]:grid-cols-[104px_minmax(0,1fr)_44px_44px] [@media(max-width:480px)]:grid-cols-[96px_minmax(0,1fr)_44px_44px] [@media(max-width:480px)]:gap-x-[8px] [@media(max-width:480px)]:p-[12px]">
       {/*
         Clicking the logo returns to the store homepage at "/".
-        Link uses React Router so Layout stays mounted and keeps its shared cart state.
+        Returning from checkout to the shop keeps the same Layout and cart mounted.
         aria-label gives the whole link the accessible name "SaveSo home".
         At <=800px, the logo sits in column 2, row 1.
         min-w-0 lets the cell shrink; w-[96px]/max-w-full limit the image width.
@@ -246,7 +246,7 @@ const Navbar = ({ totalItemsQuantity, onOpenCart, isCartOpen, searchText, onSear
         The account group sits on the right; flex/gap place buttons side by side with space between them.
         At <=800px, move the group to column 4 and replace Sign Up/Login with the small avatar below.
         min-w keeps buttons wide enough; whitespace-nowrap keeps labels on one line; px/py add inner padding.
-        type="button" prevents form submission. These buttons do not have onClick handlers or links yet.
+        Login/account links open the shared login page; Sign Up remains an unfinished button.
       */}
       <div className="flex gap-[10px] justify-self-end [@media(max-width:800px)]:col-start-4 [@media(max-width:800px)]:row-start-1 [@media(max-width:480px)]:gap-[6px]">
         {/* Show this signup label above 800px; type="button" prevents form submission and no action is wired yet. */}
@@ -256,28 +256,28 @@ const Navbar = ({ totalItemsQuantity, onOpenCart, isCartOpen, searchText, onSear
         >
           Sign Up
         </button>
-        {/* This separate login control shares the same dimensions and screen-width rule, with no action yet. */}
-        <button
-          className="min-w-[110px] whitespace-nowrap rounded-full border border-[#808080] px-[20px] py-[8px] [@media(max-width:800px)]:hidden"
-          type="button"
+        {/* Open Joseph's shared login page; customers can browse the store without signing in. */}
+        <Link
+          className="min-w-[110px] whitespace-nowrap rounded-full border border-[#808080] px-[20px] py-[8px] text-center [@media(max-width:800px)]:hidden"
+          to="/login"
         >
           Login
-        </button>
+        </Link>
 
         {/*
           The avatar appears only at <=800px; this does not check whether the user is logged in.
           hidden/flex control visibility; h/w/min-w keep a 44px tap area, and p-[6px] adds inner padding.
-          aria-label names the button "Account"; empty alt avoids reading the decorative image twice.
-          This button does not have an action to open an account page yet.
+          aria-label names the link "Account"; empty alt avoids reading the decorative image twice.
+          Open the same login page from this compact account control.
         */}
-        <button
+        <Link
           className="hidden h-[44px] w-[44px] min-w-[44px] items-center justify-center rounded-full border border-[#d1d5db] bg-[#f3f4f6] p-[6px] [@media(max-width:800px)]:flex"
-          type="button"
+          to="/login"
           aria-label="Account"
         >
-          {/* Size the decorative image to its circular button; empty alt keeps the Account label from repeating. */}
+          {/* Size the decorative image to its circular link; empty alt keeps the Account label from repeating. */}
           <img className="h-full w-full" src="/account-avatar.svg" alt="" />
-        </button>
+        </Link>
       </div>
     </nav>
   );
