@@ -4,22 +4,24 @@ const ID_FIELDS = {
   Employees: 'EmployeeID',
   Orders: 'OrderID',
   Items: 'ItemID',
+  'Item Categories': 'ItemCategoryID',
   Discounts: 'DiscountID',
   Sales: 'SaleID',
   Departments: 'DepartmentID',
-  Returns: 'ReturnID'
+  Returns: 'ReturnID',
+  Inventory: 'InventoryID',
+  Customers: 'CustomerID'
 }
 
 function findAll(entity){
-  const sql = `SELECT * FROM ${entity}`;
-  return query(sql);
+  const sql = `SELECT * FROM ??`;
+  return query(sql, [entity]);
 }
 
 function findOne(entity, id){
   const idField = ID_FIELDS[entity];
-  const sql = `SELECT * FROM ${entity} WHERE ${idField} = ?`
-  console.log(idField, entity, id);
-  return query(sql, [id]);
+  const sql = `SELECT * FROM ?? WHERE ?? = ?`
+  return query(sql, [entity, idField, id]);
 }
 
 function updateOne(entity, id, data){

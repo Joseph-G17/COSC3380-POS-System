@@ -3,11 +3,11 @@ import { NavLink, useNavigate } from "react-router-dom";
 const SideBar = () => {
   const navigate = useNavigate();
 
-  const entities = ['Employees', 'Orders', 'Items', 'Discounts', 'Sales', 'Department', 'Returns', 'Inventory'];
-  const reports = ['SalesSummary', 'StockReport', 'EmployeeSales', 'CustomerPurchases'];
+  const entities = ['Employees', 'Orders', 'Items', 'Item Categories', 'Discounts', 'Sales', 'Departments', 'Returns', 'Inventory', 'Customers'];
+  const reports = ['SalesSummary', 'EmployeeSales','StockReport', 'ItemPerformance'];
 
   return (
-    <aside className='row-span-2 border'>
+    <aside className='row-span-2 border h-screen overflow-y-auto'>
       <div className='p-7 mb-1 inline-flex items-center'>
         <img className='w-15 h-15' src='/SaveSolLogo.png'/>
         <h1 className='text-nowrap text-2xl pl-1 pt-2'>SaveSo</h1>
