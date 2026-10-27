@@ -3,6 +3,7 @@ import { Route, createBrowserRouter, createRoutesFromElements, RouterProvider, N
 import LoginLayout from './layouts/LoginLayout'
 
 import AdminMainLayout from './layouts/AdminMainLayout';
+import LoginLayout from './layouts/LoginLayout';
 import HomePage from './pages/admin/HomePage';
 import ReportsPage from './pages/admin/ReportsPage';
 import ClockInPage from './pages/admin/ClockInPage';
