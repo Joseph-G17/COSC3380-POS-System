@@ -1,4 +1,5 @@
 const Employees = require('../models/employeeModel');
+const Universal = require('../models/universalModel');
 
 const { getPostData } = require('../utilities')
 
@@ -6,7 +7,7 @@ const { getPostData } = require('../utilities')
 // route: GET /api/employee
 async function getEmployees(req, res) {
   try {
-    const employees = await Employees.findAll();
+    const employees = await Universal.findAll('employees');
 
     res.writeHead(200, {'Content-Type': 'application/json' });
     res.end(JSON.stringify(employees));
@@ -16,11 +17,28 @@ async function getEmployees(req, res) {
   }
 } 
 
+async function getEmployeeLogin(req, res){
+  const body = await getPostData(req);
+  const {username, password} = JSON.parse(body);
+  
+  const rows = await Employees.findEmployeeLogin(username);
+  const login = rows[0];
+
+  if(!login || login.employeePassword != password){
+    res.writeHead(401, {'Content-Type': 'application/json'});
+    res.end(JSON.stringify({message: 'Password does not match'}));
+  }
+  else {
+    res.writeHead(200, {'Content-Type': 'application/json'});
+    res.end(JSON.stringify({employeeID: login.employeeID, Role: login.Role}));
+  }
+}
+
 // desc: Gets Single Employee
 // route: GET /api/employee/:EmployeeID
 async function getEmployee(req, res, id) {
   try {
-    const employee = await Employees.findByID(id);
+    const employee = await Universal.findOne('Employees', id)
 
     if(!employee) {
       res.writeHead(404, {'Content-Type': 'application/json'});
@@ -63,7 +81,6 @@ async function createEmployee(req, res){
 // route: PUT /api/employees/id
 async function updateEmployee(req, res, id){
   try {
-    const employee = await Employees.findByID(id);
 
     if(!employee) {
       res.writeHead(404, {'Content-Type': 'application/json'});
@@ -93,7 +110,7 @@ async function updateEmployee(req, res, id){
 // route: DELETE /api/employee/:EmployeeID
 async function deleteEmployee(req, res, id) {
   try {
-    const employee = await Employees.findByID(id);
+    //const employee = await Employees.findByID(id);
 
     if(!employee) {
       res.writeHead(404, {'Content-Type': 'application/json'});
@@ -112,6 +129,7 @@ async function deleteEmployee(req, res, id) {
 
 module.exports = {
   getEmployees,
+  getEmployeeLogin,
   getEmployee,
   createEmployee,
   updateEmployee,

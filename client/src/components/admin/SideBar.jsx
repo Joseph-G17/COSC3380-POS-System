@@ -1,28 +1,40 @@
-import { useSearchParams } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 
 const SideBar = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
 
-  const entities = ['Employee', 'Orders', 'Items', 'Discounts', 'Sales', 'Department', 'Returns'];
-  const currentEntity = searchParams.get('entity') ?? 'Employee'
+  const entities = ['Employees', 'Orders', 'Items', 'Item Categories', 'Discounts', 'Sales', 'Departments', 'Returns', 'Inventory', 'Customers'];
+  const reports = ['SalesSummary', 'EmployeeSales','StockReport', 'ItemPerformance'];
 
   return (
-    <aside className='row-span-2 border'>
-      <div className='p-7 mb-1'>
-        <h1 className='text-nowrap '>GROCERY STORE NAME</h1>
+    <aside className='row-span-2 border h-screen overflow-y-auto'>
+      <div className='p-7 mb-1 inline-flex items-center'>
+        <img className='w-15 h-15' src='/SaveSolLogo.png'/>
+        <h1 className='text-nowrap text-2xl pl-1 pt-2'>SaveSo</h1>
       </div>
+      <h2 className='place-self-center text-xl underline'>Manage</h2>
       <div className='grid gap-y-0.5'>
         {entities.map((entity) => 
-          <button className='p-4 duration-50 ease-in hover:bg-amber-100 focus:bg-amber-100' 
+          <NavLink className='p-4 button-highlight focus:bg-amber-100'
             key={entity}
-            onClick={() => setSearchParams({ entity })}
+            to={`/admin/manage/${entity}`}
           >
             Manage {entity}
-          </button>
+          </NavLink>
+        )}  
+      </div>
+      <h2 className="place-self-center text-xl underline">Data Reports</h2>
+      <div className='grid gap-y-0.5'>
+        {reports.map((report) => 
+          <NavLink className='p-4 button-highlight focus:bg-amber-100'
+            key={report}
+            to={`/admin/reports/${report}`}
+          >
+            Manage {report}
+          </NavLink>
         )}  
       </div>
     </aside>
-
   )
 }
 

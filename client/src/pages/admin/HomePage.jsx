@@ -1,18 +1,31 @@
-import { useSearchParams } from "react-router-dom";
+import { useState } from 'react';
+import TitleHeader from "../../components/admin/TitleHeader"
+import DataSnippets from "../../components/admin/DataSnippets"
+import { useParams } from "react-router-dom";
+
+const ID_FIELDS = {
+    Employees: 'EmployeeID',
+    Orders: 'OrderID',
+    Items: 'ItemID',
+    'Item Categories': 'ItemCategoryID',
+    Discounts: 'DiscountID',
+    Sales: 'SaleID',
+    Departments: 'DepartmentID',
+    Returns: 'ReturnID',
+    Inventory: 'InventoryID',
+    Customers: 'CustomerID'
+  };
 
 const HomePage = () => {
-  const [searchParams] = useSearchParams();
-  const entity = searchParams.get('entity') ?? 'Employee';
+  const {entity} = useParams();
+  const {report} = useParams();
+  const idField = ID_FIELDS[entity];
+  const [refresh, setRefresh] = useState(0);
 
   return (
     <section className='border-b border-r'>
-      <div className='inline-flex p-10'>
-        <h1 className='text-3xl pr-4 underline'>{entity}</h1>
-        <button className="p-1 border-2"> Add New </button>
-      </div>
-      <main className=''>
-        
-      </main>
+      <TitleHeader entity={entity} report={report} showAdd onCreated={() => setRefresh(refresh + 1)}/>
+      <DataSnippets entity={entity} idField={idField} refresh={refresh}/>
     </section>
   )
 }
