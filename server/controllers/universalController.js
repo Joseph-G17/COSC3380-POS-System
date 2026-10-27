@@ -103,6 +103,38 @@ async function createOrder(req, res) {
   }
 }
 
+async function loginEmployee(req, res) {
+  let credentials;
+  try {
+    credentials = JSON.parse(await getPostData(req));
+  } catch {
+    res.writeHead(400, {'Content-Type': 'application/json'});
+    return res.end(JSON.stringify({ message: 'Request body must be valid JSON' }));
+  }
+
+  const { username, password } = credentials ?? {};
+  if (typeof username !== 'string' || username.trim().length === 0 ||
+      typeof password !== 'string' || password.length === 0) {
+    res.writeHead(400, {'Content-Type': 'application/json'});
+    return res.end(JSON.stringify({ message: 'Username and password are required' }));
+  }
+
+  try {
+    const employee = await Universal.authenticateEmployee(username.trim(), password);
+    if (!employee) {
+      res.writeHead(401, {'Content-Type': 'application/json'});
+      return res.end(JSON.stringify({ message: 'Invalid email/username or password' }));
+    }
+
+    res.writeHead(200, {'Content-Type': 'application/json'});
+    res.end(JSON.stringify(employee));
+  } catch (error) {
+    console.error('Employee login failed', error);
+    res.writeHead(500, {'Content-Type': 'application/json'});
+    res.end(JSON.stringify({ message: 'Unable to sign in right now' }));
+  }
+}
+
 // desc: Gets a single row of any entity
 // route: GET /api/:entity/:id
 async function getEntity(req, res, entity, id) {
@@ -229,6 +261,7 @@ module.exports = {
   getEntities,
   adjustItemStock,
   createOrder,
+  loginEmployee,
   getEntity,
   updateEntity,
   deleteEntity,

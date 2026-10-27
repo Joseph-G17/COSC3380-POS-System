@@ -1,4 +1,5 @@
 let { query, getConnection } = require('../sqlConnecter');
+const bcrypt = require('bcryptjs');
 
 const ID_FIELDS = {
   Employees: 'EmployeeID',
@@ -50,6 +51,25 @@ function getColumns(entity){
 function insertOne(entity, data){
   const sql = `INSERT INTO ?? SET ?`;
   return query(sql, [entity, data]);
+}
+
+async function authenticateEmployee(username, password) {
+  const rows = await query(
+    'SELECT Employees.`EmployeeID`, Employees.`Role`, `Employee Logins`.`EmployeePassword` ' +
+      'FROM Employees INNER JOIN `Employee Logins` ' +
+      'ON Employees.`EmployeeID` = `Employee Logins`.`EmployeeID` ' +
+      'WHERE `Employee Logins`.`EmployeeUsername` = ? OR Employees.`Email` = ? LIMIT 1',
+    [username, username]
+  );
+  if (rows.length === 0) return null;
+
+  const isPasswordValid = await bcrypt.compare(password, rows[0].EmployeePassword);
+  if (!isPasswordValid) return null;
+
+  return {
+    employeeID: Number(rows[0].EmployeeID),
+    Role: Number(rows[0].Role)
+  };
 }
 
 async function adjustItemStock(id, change) {
@@ -251,6 +271,7 @@ module.exports = {
   deleteOne,
   getColumns,
   insertOne,
+  authenticateEmployee,
   adjustItemStock,
   createOrder
 }

@@ -12,7 +12,9 @@ const CashierCheckout = () => {
   const [cart, setCart] = useState([]);
   const [search, setSearch] = useState('');
   const [customerId, setCustomerId] = useState('');
-  const [employeeId, setEmployeeId] = useState('');
+  const [employeeId, setEmployeeId] = useState(
+    () => sessionStorage.getItem('employeeID') ?? ''
+  );
   const [paymentMethod, setPaymentMethod] = useState('Cash');
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -291,6 +293,7 @@ const CashierCheckout = () => {
                 step="1"
                 required
                 value={employeeId}
+                readOnly={Boolean(employeeId)}
                 onChange={(event) => setEmployeeId(event.target.value)}
               />
               <p className="mt-1 text-xs text-gray-500">Required to record which cashier handled the order.</p>

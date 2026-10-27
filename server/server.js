@@ -1,10 +1,18 @@
 const http = require('http');
 
 const { getEmployees, getEmployee, createEmployee, updateEmployee, deleteEmployee } = require('./controllers/employeeController')
-const { getEntities, adjustItemStock, createOrder } = require('./controllers/universalController');
+const {
+  getEntities,
+  adjustItemStock,
+  createOrder,
+  loginEmployee
+} = require('./controllers/universalController');
 
 const server = http.createServer((req, res) => {
-  if(req.url === '/api/orders' && req.method === 'POST'){
+  if(req.url === '/api/login' && req.method === 'POST'){
+    loginEmployee(req, res);
+  }
+  else if(req.url === '/api/orders' && req.method === 'POST'){
     createOrder(req, res);
   }
   else if(req.url.match(/^\/api\/items\/([0-9]+)\/stock$/) && req.method === 'POST'){
