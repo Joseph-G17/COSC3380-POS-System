@@ -1,28 +1,3 @@
-<<<<<<< Updated upstream
-const { query } = require('../sqlConnecter');
-
-function findAll() {
-  return query('SELECT * FROM Items');
-}
-
-async function findByID(id) {
-  const items = await query('SELECT * FROM Items WHERE ItemID = ?', [id]);
-  return items[0];
-}
-
-async function create(itemData) {
-  const result = await query('INSERT INTO Items SET ?', [itemData]);
-  return findByID(result.insertId);
-}
-
-async function update(id, itemData) {
-  await query('UPDATE Items SET ? WHERE ItemID = ?', [itemData, id]);
-  return findByID(id);
-}
-
-function remove(id) {
-  return query('DELETE FROM Items WHERE ItemID = ?', [id]);
-=======
 let employees = require('../testdata/items');
 let { query } = require('../sqlConnecter')
 const { writeDataToFile } = require('../utilities');
@@ -73,7 +48,6 @@ function remove(id) {
     writeDataToFile('./testdata/employees.json', employees);
     resolve();
   })
->>>>>>> Stashed changes
 }
 
 module.exports = {
@@ -82,8 +56,4 @@ module.exports = {
   create,
   update,
   remove
-<<<<<<< Updated upstream
-};
-=======
 }
->>>>>>> Stashed changes

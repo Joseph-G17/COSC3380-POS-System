@@ -23,5 +23,11 @@ function query(sql, params){
 }
 
 module.exports = {
-  query
+  query,
+  getConnection: () => new Promise((resolve, reject) => {
+    pool.getConnection((error, connection) => {
+      if (error) return reject(error);
+      resolve(connection);
+    });
+  })
 }

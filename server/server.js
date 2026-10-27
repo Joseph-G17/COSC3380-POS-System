@@ -1,9 +1,29 @@
 const http = require('http');
 
 const { getEmployees, getEmployee, createEmployee, updateEmployee, deleteEmployee } = require('./controllers/employeeController')
+const { getEntities, adjustItemStock, createOrder } = require('./controllers/universalController');
 
 const server = http.createServer((req, res) => {
-  if(req.url === '/api/employees' && req.method === 'GET'){
+  if(req.url === '/api/orders' && req.method === 'POST'){
+    createOrder(req, res);
+  }
+  else if(req.url.match(/^\/api\/items\/([0-9]+)\/stock$/) && req.method === 'POST'){
+    const id = req.url.split('/')[3];
+    adjustItemStock(req, res, id);
+  }
+  else if(req.url === '/api/discounts' && req.method === 'GET'){
+    getEntities(req, res, 'Discounts');
+  }
+  else if(req.url === '/api/items' && req.method === 'GET'){
+    getEntities(req, res, 'Items');
+  }
+  else if(req.url === '/api/orders' && req.method === 'GET'){
+    getEntities(req, res, 'Orders');
+  }
+  else if(req.url === '/api/sales' && req.method === 'GET'){
+    getEntities(req, res, 'Sales');
+  }
+  else if(req.url === '/api/employees' && req.method === 'GET'){
     getEmployees(req, res);
   } 
   else if(req.url.match(/^\/api\/employees\/([0-9]+)$/) && req.method === 'GET'){ //req.params.id equivalent
