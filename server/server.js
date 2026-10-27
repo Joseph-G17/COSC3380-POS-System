@@ -4,7 +4,10 @@ const { getEmployeeLogin } = require('./controllers/employeesController')
 const { getEntities, getEntity, updateEntity, deleteEntity, getEntityColumns, createEntity } = require('./controllers/universalController');
 const { getReport } = require('./controllers/reportsController')
 
-// Load the storefront handlers before the shared entity routes can match their URLs.
+//cashier:
+const {adjustItemStock, createOrder, loginEmployee } = require('./controllers/itemController');
+
+// Load the customer handlers; their specific routes must precede generic entity routes.
 const { getProducts } = require('./controllers/OnlineStoreController');
 const { getCategories } = require('./controllers/categoriesController');
 const {

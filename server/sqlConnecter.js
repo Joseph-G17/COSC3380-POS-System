@@ -65,4 +65,14 @@ async function withTransaction(work) {
   }
 }
 
-module.exports = { query, withTransaction };
+// The cashier model needs a callback-style connection for its order transaction.
+function getConnection() {
+  return new Promise((resolve, reject) => {
+    pool.getConnection((error, connection) => {
+      if (error) return reject(error);
+      resolve(connection);
+    });
+  });
+}
+
+module.exports = { query, withTransaction, getConnection };
