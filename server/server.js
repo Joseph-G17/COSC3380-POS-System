@@ -4,9 +4,19 @@ const { getEmployeeLogin } = require('./controllers/employeesController')
 const { getEntities, getEntity, updateEntity, deleteEntity, getEntityColumns, createEntity } = require('./controllers/universalController');
 const { getReport } = require('./controllers/reportsController')
 
-// Load the customer handlers; their specific routes must precede generic entity routes.
+// Load the storefront handlers before the shared entity routes can match their URLs.
 const { getProducts } = require('./controllers/OnlineStoreController');
 const { getCategories } = require('./controllers/categoriesController');
+const {
+  signupCustomer,
+  loginCustomer,
+} = require('./controllers/customerController');
+
+// The customer forms use these two POST URLs; /api/login remains the staff route.
+const customerRoutes = {
+  '/api/customer/signup': { method: 'POST', handle: signupCustomer },
+  '/api/customer/login': { method: 'POST', handle: loginCustomer },
+};
 
 const handler = (req, res) => {
   const incoming = new URL(req.url, 'http://localhost');
@@ -23,6 +33,21 @@ const handler = (req, res) => {
   } catch (error) {
     res.writeHead(400, {'Content-Type': 'application/json'});
     return res.end(JSON.stringify({message: 'Bad URL'}));
+  }
+
+  // Match a customer form URL without its query string, then call its handler below.
+  const customerRoute = customerRoutes[req.url.split('?')[0]];
+  if (customerRoute) {
+    res.setHeader('Cache-Control', 'no-store');
+    // Tell the browser that these form routes require POST.
+    if (req.method !== customerRoute.method) {
+      res.writeHead(405, {
+        'Content-Type': 'application/json',
+        Allow: customerRoute.method,
+      });
+      return res.end(JSON.stringify({ message: 'Method not allowed' }));
+    }
+    return customerRoute.handle(req, res);
   }
 
   if(req.url === '/api/login' && req.method === 'POST'){

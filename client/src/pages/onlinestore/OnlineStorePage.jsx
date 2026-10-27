@@ -1,66 +1,63 @@
-import { useEffect, useState } from "react"; // State holds category data; the effect loads it after mounting.
-import { useOutletContext } from "react-router-dom"; // Read values/functions supplied by the shared Layout.
-import Sidebar from "../../components/onlinestore/Sidebar"; // Sidebar displays category checkboxes.
-import ProductList from "../../components/onlinestore/ProductList"; // ProductList loads and filters product cards.
+import { useEffect, useState } from "react";
+import { useOutletContext } from "react-router-dom";
+import Sidebar from "../../components/onlinestore/Sidebar";
+import ProductList from "../../components/onlinestore/ProductList";
 
-// Layout keeps cart/search selections; this page loads the actual category labels from MySQL.
+// Layout owns cart/search selections; this page loads category labels from the API.
 const OnlineStorePage = () => {
-  // Give local names to Layout's shared values and actions; this page does not copy its cart.
+  // Read shared values and callbacks from the parent route instead of copying its state.
   const { addToCart, searchText, selectedCategoryIds, toggleCategory, clearCategories } = useOutletContext();
-  const [categories, setCategories] = useState([]); // Start with no rows until the API responds.
-  const [categoriesLoading, setCategoriesLoading] = useState(true); // Show loading while the first request runs.
-  const [categoriesError, setCategoriesError] = useState(""); // No error message is needed before a failure.
+  // Sidebar receives these rows plus their loading and failure states.
+  const [categories, setCategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [categoriesError, setCategoriesError] = useState("");
 
-  // React runs this setup after adding the shop page to the screen.
+  // Load once when the shop opens; cancel on leaving or after 10 seconds.
   useEffect(() => {
-    const controller = new AbortController(); // Give this API request a cancel switch.
-    let isMounted = true; // Ignore a late response after the user leaves this page.
-    const timeoutId = window.setTimeout(() => controller.abort(), 10000); // Stop waiting after 10 seconds.
+    const controller = new AbortController();
+    let isMounted = true;
+    const timeoutId = window.setTimeout(() => controller.abort(), 10000);
 
-    // async allows await to wait for the backend without freezing the page.
+    // Load the labels once; Sidebar returns each chosen ID to Layout.
     async function loadCategories() {
       try {
-        const response = await fetch("/api/categories", { signal: controller.signal }); // Ask our backend for real category rows.
-        // A failed HTTP status must use the error message rather than fill the checkboxes.
+        const response = await fetch("/api/categories", { signal: controller.signal });
+        // A failed HTTP status must not become category rows.
         if (!response.ok) {
           throw new Error("Unable to load categories");
         }
-        const data = await response.json(); // Convert the JSON response into JavaScript values.
-        // Sidebar expects a list, so reject any different response shape.
+        const data = await response.json();
+        // Sidebar expects a list of category rows.
         if (!Array.isArray(data)) {
           throw new Error("Invalid category data");
         }
         if (isMounted) {
-          setCategories(data); // Save valid rows and let React render the new checkbox labels.
+          setCategories(data);
         }
       } catch {
-        // Category failure leaves name search available; never substitute made-up labels.
+        // A category request failure leaves product-name search available.
         if (isMounted) {
-          setCategoriesError("Unable to load categories. You can still search products."); // Explain only the failed category request.
+          setCategoriesError("Unable to load categories. You can still search products.");
         }
       } finally {
-        window.clearTimeout(timeoutId); // Success or failure ends the need for the timeout.
+        window.clearTimeout(timeoutId);
         if (isMounted) {
-          setCategoriesLoading(false); // Replace loading with checkboxes or the error message.
+          setCategoriesLoading(false);
         }
       }
     }
 
-    loadCategories(); // Call the function now; declaring it above did not start the request.
-    // React runs this cleanup before removing the shop page.
+    loadCategories();
     return () => {
-      isMounted = false; // Prevent unfinished work from changing a page that is gone.
-      window.clearTimeout(timeoutId); // The removed page no longer needs a timeout.
-      controller.abort(); // Cancel the category request when leaving the shop.
+      isMounted = false;
+      window.clearTimeout(timeoutId);
+      controller.abort();
     };
-  }, []); // Load once per page mount, rather than on each search or checkbox change.
+  }, []);
 
   return (
-    // On small screens the category panel sits above the cards so both remain usable.
     <div className="flex flex-col items-start md:flex-row">
-      {/* Send the API rows and loading/error values so Sidebar can display the right state.
-          selectedCategoryIds tells it which boxes are checked.
-          onToggleCategory/onClearCategories are functions it calls after the visitor chooses an action. */}
+      {/* Sidebar reads the rows and calls Layout's category actions. */}
       <Sidebar
         categories={categories}
         selectedCategoryIds={selectedCategoryIds}
@@ -69,11 +66,10 @@ const OnlineStorePage = () => {
         categoriesLoading={categoriesLoading}
         categoriesError={categoriesError}
       />
-      {/* Text matches AND a selected category matches; no selected category allows all of them.
-          ProductList reads the filters and calls Layout's addToCart when a product button is clicked. */}
+      {/* ProductList combines the shared name and category filters. */}
       <ProductList onAddToCart={addToCart} searchText={searchText} selectedCategoryIds={selectedCategoryIds} />
     </div>
   );
 };
 
-export default OnlineStorePage; // Allow App to display this page at the shop route.
+export default OnlineStorePage;

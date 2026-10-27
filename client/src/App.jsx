@@ -1,6 +1,8 @@
 import { Route, createBrowserRouter, createRoutesFromElements, RouterProvider, Navigate  } from 'react-router-dom'
 
 import LoginLayout from './layouts/LoginLayout'
+import CustomerLoginPage from './pages/customer/CustomerLoginPage';
+import CustomerSignupPage from './pages/customer/CustomerSignupPage';
 
 import AdminMainLayout from './layouts/AdminMainLayout';
 import HomePage from './pages/admin/HomePage';
@@ -9,7 +11,7 @@ import ClockInPage from './pages/admin/ClockInPage';
 import EditProfilePage from './pages/admin/EditProfilePage';
 import InspectDataPage from './pages/admin/InspectDataPage';
 
-// The shared layout keeps one cart while these two customer pages change.
+// Public shop and checkout share one cart; customer forms open on separate routes.
 import OnlineStoreLayout from './layouts/OnlineStoreLayout'; // Holds the shared customer cart and navigation.
 import OnlineStorePage from './pages/onlinestore/OnlineStorePage'; // Shows product search and category filters.
 import CheckoutPage from './pages/onlinestore/CheckoutPage'; // Reads that same cart to show the order summary.
@@ -34,7 +36,10 @@ const App = () => {
           <Route path='checkout' element={<CheckoutPage />} />
         </Route>
 
-        {/* Store Login/Account opens this employee login page; customer sign-in is still unfinished. */}
+        {/* Store Login/Sign Up opens customer forms; their staff link continues to /login. */}
+        <Route path='/customer/login' element={<CustomerLoginPage />} />
+        <Route path='/customer/signup' element={<CustomerSignupPage />} />
+        {/* Keep this staff URL and its employee login handler compatible with the team's links. */}
         <Route path='/login' element={<LoginLayout />} />
 
         {/* Preserve the existing admin layout and its default page. */}
@@ -59,7 +64,7 @@ const App = () => {
     )
   );
   
-  return <RouterProvider router={router}/>
+  return <RouterProvider router={router}/>;
 }
 
 export default App
