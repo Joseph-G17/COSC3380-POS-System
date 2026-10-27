@@ -481,3 +481,11 @@ FROM `Items` AS i
 LEFT JOIN `Inventory` AS inv ON inv.`ItemID` = i.`ItemID`
 GROUP BY i.`ItemID`, i.`ItemName`
 ORDER BY i.`ItemID`;
+INSERT INTO `Employees`
+  (`DepartmentID`, `FirstName`, `LastName`, `Email`, `Role`, `BirthDate`, `HireDate`)
+VALUES
+  (1, 'Jane', 'Doe', 'jane.doe@example.com', 1, '1995-04-12', CURDATE());
+INSERT INTO `Employee Logins`
+  (`EmployeeID`, `EmployeeUsername`, `EmployeePassword`)
+VALUES
+  (1, 'jane.doe', 'testpassword');

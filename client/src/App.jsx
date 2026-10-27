@@ -1,6 +1,7 @@
 import { Route, createBrowserRouter, createRoutesFromElements, RouterProvider } from 'react-router-dom'
 
 import AdminMainLayout from './layouts/AdminMainLayout';
+import LoginLayout from './layouts/LoginLayout';
 import HomePage from './pages/admin/HomePage';
 import CashierMainLayout from './layouts/CashierMainLayout';
 import CashierCheckout from './pages/cashier/cashiercheckout';
@@ -13,6 +14,7 @@ const App = () => {
     // Group storefront and admin routes in one router using a JSX fragment.
     createRoutesFromElements(
       <>
+        <Route path='/login' element={<LoginLayout />} />
         <Route path='/admin' element={<AdminMainLayout />}>
           <Route index element={<HomePage />} />
         </Route>
