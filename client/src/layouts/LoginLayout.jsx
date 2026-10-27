@@ -31,7 +31,7 @@ const LoginLayout = () => {
       // Follow the current employee-role paths: 0 or 1 -> admin, others -> store.
       // Returning to the store here does not authenticate a customer account.
       if (data.Role == 0) navigate("/admin");
-      else if (data.Role == 1) navigate("/admin");
+      else if (data.Role == 1) navigate("/cashier");
       else navigate("/");
     } catch (error) {
       // Report the error for debugging; this catch does not display a message in the form.
