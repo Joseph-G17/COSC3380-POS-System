@@ -14,7 +14,7 @@ function findAll(){
 }
 
 function findEmployeeLogin(username){
-  const sql = 'SELECT l.employeeID, l.employeePassword, e.Role FROM \`Employee Logins\` as l JOIN Employees as e ON e.employeeID = l.employeeID WHERE l.employeeUsername = ?'
+  const sql = 'SELECT l.employeeID, l.employeePassword, e.Role, e.firstName FROM \`Employee Logins\` as l JOIN Employees as e ON e.employeeID = l.employeeID WHERE l.employeeUsername = ?'
   return query(sql, username);
 }
 

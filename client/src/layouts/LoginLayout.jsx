@@ -1,40 +1,46 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 // Customer account pages link staff members to Joseph's existing page at /login.
 // Flow: form fields -> /api/login -> employee ID and role -> next page.
-// Customer login/signup uses separate pages and /api/customer routes.
-const LoginLayout = () => {
-  // React Router supplies a function that changes the page after the server replies.
+
+/*
+SAVE FOR LATER WHEN LOOKING FOR SESSION INFO
+const [employeeInfo, setEmployeeInfo] = useState(() => {
+    try{
+      checkSession;
+    } catch(error) {
+    }
+  });
+*/
+
+const storeEmployeeLogin = (user) => {
+  sessionStorage.setItem('saveso-employee', JSON.stringify({id: user.employeeID, firstName: user.firstName}));
+}
+
+const LoginLayout = () => { 
   const navigate = useNavigate();
 
   // The form below passes its current email (username) and password to this function.
-  async function SubmitLogin(username, password) {
-    // Send JSON to the backend; server.js currently routes this POST to employee login.
-    // await waits for the HTTP reply before the response is read below.
+  async function SubmitLogin(username, password) { //function belongs in the context because it refers to navigate and onLogin!
     const response = await fetch("/api/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password }),
     });
-    // Read the reply and choose a page. The fetch above is outside this try block,
-    // so a failed network request is not handled by the catch below yet.
     try {
-      // Turn the response JSON into an object such as {employeeID, Role}.
-      const data = await response.json();
+      const user = await response.json();
 
-      // A failed login has no employeeID: stay here. No visible error is shown yet.
-      if (!data.employeeID) return;
-
-      // This local value is not used below and does not save a signed-in session.
-      const currentEmployeeID = data.employeeID;
-
-      // Follow the current employee-role paths: 0 or 1 -> admin, others -> store.
-      // Returning to the store here does not authenticate a customer account.
-      if (data.Role == 0) navigate("/admin");
-      else if (data.Role == 1) navigate("/cashier");
+      if (user.Role == 0){ 
+        storeEmployeeLogin(user);
+        navigate("/admin");
+      }
+      else if (user.Role == 1) {
+        storeEmployeeLogin(user);
+        navigate("/cashier");
+      }
       else navigate("/");
     } catch (error) {
-      // Report the error for debugging; this catch does not display a message in the form.
       console.log(error);
     }
   }

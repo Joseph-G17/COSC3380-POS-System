@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Route, createBrowserRouter, createRoutesFromElements, RouterProvider, Navigate  } from 'react-router-dom'
 
 import LoginLayout from './layouts/LoginLayout'
@@ -48,8 +49,8 @@ const App = () => {
           <Route path='inspectData/:entity/:id' element={<InspectDataPage />}/>
           <Route path='manage/:entity' element={<HomePage /> } />
           <Route path='reports/:report' element={<ReportsPage />}/>
-          <Route path='clock-in/:user' element={<ClockInPage />}/>
-          <Route path='profile/:user' element={<EditProfilePage />}/>
+          <Route path='clock-in' element={<ClockInPage />}/>
+          <Route path='profile' element={<EditProfilePage />}/>
         </Route>
         
         <Route path='/cashier' element={<CashierMainLayout />}>

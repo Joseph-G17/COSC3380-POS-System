@@ -22,7 +22,7 @@ async function getEmployeeLogin(req, res){
   const {username, password} = JSON.parse(body);
   
   const rows = await Employees.findEmployeeLogin(username);
-  const login = rows[0];
+  const login = rows[0]; //only returns one row in this query due to unique username
 
   if(!login || login.employeePassword != password){
     res.writeHead(401, {'Content-Type': 'application/json'});
@@ -30,7 +30,7 @@ async function getEmployeeLogin(req, res){
   }
   else {
     res.writeHead(200, {'Content-Type': 'application/json'});
-    res.end(JSON.stringify({employeeID: login.employeeID, Role: login.Role}));
+    res.end(JSON.stringify({employeeID: login.employeeID, firstName: login.firstName, Role: login.Role}));
   }
 }
 

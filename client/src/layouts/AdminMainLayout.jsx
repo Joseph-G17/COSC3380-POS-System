@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router-dom'
+import { Outlet, useOutletContext } from 'react-router-dom'
 import NavBar from '../components/admin/NavBar'
 import SideBar from '../components/admin/SideBar'
 
