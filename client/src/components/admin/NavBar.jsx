@@ -1,17 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom"
 
-const checkSessionEmployee = () => {
-  const user = JSON.parse(sessionStorage.getItem('saveso-employee'));
-
-  if(user && user.id && typeof user.firstName == 'string'){
-    return { id: user.id, firstName: user.firstName }
-  }
-}
-
-const NavBar = () => {
+const NavBar = ({ employee }) => {
   const navigate = useNavigate();
-  const [employee, setEmployee] = useState(checkSessionEmployee)
   //when not set employee == null automatically
 
   return (
