@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
 
+
 const ClockInPage = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const { employee } = useOutletContext();
@@ -24,7 +25,7 @@ const ClockInPage = () => {
         </div>
         <div className="grid grid-rows-[100px_auto]">
           <div>
-            Welcome, {employee.firstName};
+            Welcome, {employee.firstName}
           </div>
           <div>
             <button>CLOCK IN</button>

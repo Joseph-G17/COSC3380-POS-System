@@ -15,7 +15,7 @@ const checkSessionEmployee = () => {
   }
   return null;
 }
-
+//NEXT STEP IS TO ADD CHECKING ROLE TO THIS TO MAKE SURE THEY CAN'T USE ANOTHER DOMAIN (ADMIN IN CASHIER, CASHIER IN LOGIN, ETC.)
 const AdminMainLayout = () => {
   const navigate = useNavigate();
   const [employee, setEmployee] = useState(checkSessionEmployee);
