@@ -25,13 +25,13 @@ const AdminMainLayout = () => {
     if(!employeeExists)
       navigate('/login', {replace: true});
 
-  }, [])
+  }, [employeeExists, navigate])
 
   return (
     <div className='grid min-h-dvh grid-cols-[15rem_1fr] grid-rows-[auto_1fr]'>
       <SideBar />
       <NavBar employee={employee} />
-      <Outlet />
+      <Outlet context={{employee, setEmployee}} />
     </div>
   )
 }
