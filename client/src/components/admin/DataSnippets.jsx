@@ -8,6 +8,7 @@ const DataSnippets = ({ entity, idField, refresh}) => {
 
   useEffect(() => {
     const loadData = async () => {
+      setRows([]);
       try{
         const response = await fetch(`/api/${entity}`,{
           method: 'GET',
@@ -40,7 +41,7 @@ const DataSnippets = ({ entity, idField, refresh}) => {
           </h2>
         ))}
       </div>
-      <div className="flex-1 overflow-y-auto">
+      <div className="max-h-[60vh] overflow-y-auto">
         {rows.map((row) => 
           <DataSnippet key={row[idField]} entity={entity} idField={idField} row={row} headers={headers}/>
         )}

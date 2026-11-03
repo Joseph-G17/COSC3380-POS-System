@@ -1,6 +1,6 @@
 {
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://YOUR-SERVER-URL.vercel.app/api/:path*" },
+    { "source": "/api/:path*", "destination": "https://saveso-server.vercel.app/api/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 } 

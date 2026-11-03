@@ -1,88 +1,83 @@
-// State keeps API data/time; effects load sales and manage browser timers.
 import { useEffect, useState } from "react";
-import { getSaleSchedule } from "./saleSchedule"; // This helper checks campaign dates without changing the rows.
+import { getSaleSchedule } from "./saleSchedule";
 
-// Layout places this strip above Navbar on both the shop and checkout pages.
+// Layout places this strip above Navbar on shop and checkout pages.
 const AnnouncementBar = () => {
-  const [sales, setSales] = useState([]); // Keep campaign rows received from the existing sales API.
-  const [now, setNow] = useState(Date.now); // React calls Date.now once to get the initial time.
+  // Keep API campaign rows and the time used to decide which names are visible.
+  const [sales, setSales] = useState([]);
+  const [now, setNow] = useState(Date.now);
 
-  // Start loading after React adds the bar to the page.
+  // Refresh on entry and once a minute; cancel older requests and stop after 10 seconds.
   useEffect(() => {
-    let isMounted = true; // Ignore a response if this component has already been removed.
-    let activeController; // Remember the current request so the next refresh can cancel it.
-    let requestTimeoutId; // Remember the latest timeout so cleanup can stop it.
+    let isMounted = true;
+    let activeController;
+    let requestTimeoutId;
 
-    // Load on entry and once a minute so new or changed campaigns can appear.
+    // Only the newest request may replace the rows used by the date helper.
     async function loadSales() {
-      activeController?.abort(); // Cancel the previous request before starting another one.
-      const controller = new AbortController(); // Create a cancel switch for this one request.
-      activeController = controller; // Mark this request as the newest one.
-      // The current server may leave a failed query pending; stop waiting after 10 seconds.
+      activeController?.abort();
+      const controller = new AbortController();
+      activeController = controller;
+      // Stop waiting if the sales request hangs.
       const timeoutId = window.setTimeout(() => controller.abort(), 10000);
-      requestTimeoutId = timeoutId; // Keep the timer ID where effect cleanup can reach it.
+      requestTimeoutId = timeoutId;
 
       try {
-        // Ask our backend for sales; await pauses this function until the response arrives.
         const response = await fetch("/api/sales", { signal: controller.signal });
-        // HTTP errors must enter catch instead of being displayed as valid sales.
+        // A failed HTTP status must not become a displayed sale.
         if (!response.ok) {
           throw new Error("Unable to load sales");
         }
-        const data = await response.json(); // Convert the JSON response into JavaScript values.
-        // The date helper expects a list of rows, so reject a different response shape.
+        const data = await response.json();
+        // The date helper expects a list of campaign rows.
         if (!Array.isArray(data)) {
           throw new Error("Invalid sales data");
         }
 
         // An older response must not replace newer data or update a removed component.
         if (isMounted && activeController === controller) {
-          setSales(data); // Save the rows; React renders the bar again with these sales.
-          setNow(Date.now()); // Check campaign dates against the time this response arrived.
+          setSales(data);
+          setNow(Date.now());
         }
       } catch {
-        // Hide unverified offers on failure; do not substitute a made-up discount.
+        // Hide the bar when campaigns cannot be verified.
         if (isMounted && activeController === controller) {
-          setSales([]); // An empty array makes the bar disappear until a refresh succeeds.
-          setNow(Date.now()); // Keep the date check current even after a failed request.
+          setSales([]);
+          setNow(Date.now());
         }
       } finally {
-        // Success or failure ends this request, so its timeout is no longer needed.
         window.clearTimeout(timeoutId);
       }
     }
 
-    loadSales(); // Fetch immediately instead of waiting for the first one-minute refresh.
-    const refreshId = window.setInterval(loadSales, 60000); // The browser calls loadSales every 60,000 ms.
-    // React runs this cleanup when the bar leaves the page.
+    loadSales();
+    const refreshId = window.setInterval(loadSales, 60000);
+    // Cancel requests and timers when leaving the store layout.
     return () => {
-      isMounted = false; // Tell unfinished requests that they must not change state.
-      window.clearInterval(refreshId); // Stop future refreshes.
-      window.clearTimeout(requestTimeoutId); // Stop the latest pending request timer.
-      activeController?.abort(); // Stop work when leaving the customer layout.
+      isMounted = false;
+      window.clearInterval(refreshId);
+      window.clearTimeout(requestTimeoutId);
+      activeController?.abort();
     };
-  }, []); // An empty dependency list runs setup once per mount, rather than on every render.
+  }, []);
 
-  // Only show campaigns whose start/end dates include the current time.
-  // Read the helper's two results: visible rows and the nearest future start/end time.
+  // Find active sales and the next start/end time that can change the bar.
   const { activeSales, nextChangeAt } = getSaleSchedule(sales, now);
 
   useEffect(() => {
     if (nextChangeAt === null) {
-      return; // No upcoming date boundary means no extra timer is needed.
+      return;
     }
     // Recheck at the next start/end; cap long waits to the browser's timer limit.
     const delay = Math.min(Math.max(nextChangeAt - Date.now(), 0), 2147483647);
-    // At that boundary, a new time value makes React recheck which sales are active.
     const timerId = window.setTimeout(() => setNow(Date.now()), delay);
-    return () => window.clearTimeout(timerId); // Cancel an old timer before replacing it.
-  }, [nextChangeAt, now]); // Rebuild the timer when the next boundary or checked time changes.
+    return () => window.clearTimeout(timerId);
+  }, [nextChangeAt, now]);
 
   if (activeSales.length === 0) {
-    return null; // No active sale: leave no empty strip above Navbar.
+    return null;
   }
 
-  // Render a green strip; polite/atomic announcements read changed sale names as one message.
   return (
     <section
       aria-label="Current sales"
@@ -90,12 +85,9 @@ const AnnouncementBar = () => {
       aria-atomic="true"
       className="w-full bg-[#1f5735] px-4 py-2 text-center text-sm font-medium text-white sm:px-6"
     >
-      {/* flex-wrap lets campaign names use extra lines when the screen is narrow. */}
+      {/* Only display active campaign names returned by the API. */}
       <ul className="mx-auto flex max-w-6xl flex-wrap justify-center gap-x-6 gap-y-1">
-        {/* Show every active campaign name exactly as supplied; sales has no discount percentage. */}
         {activeSales.map(function (sale) {
-          // map supplies one sale at a time; return gives its list entry back to React.
-          // SaleID is the stable key, and the wrapping styles let long names fit.
           return (
             <li key={sale.SaleID} className="min-w-0 max-w-full" style={{ textWrap: "wrap", overflowWrap: "anywhere" }}>
               {sale.SaleName}
@@ -107,4 +99,4 @@ const AnnouncementBar = () => {
   );
 };
 
-export default AnnouncementBar; // Allow Layout to place the same bar on both customer pages.
+export default AnnouncementBar;

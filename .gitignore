@@ -4,3 +4,8 @@ client/node_modules/
 *.env
 server/.postman
 server/postman
+/server/test/
+*.vscode/settings.json/
+.vscode/settings.json
+/.vscode
+.vscode/settings.json

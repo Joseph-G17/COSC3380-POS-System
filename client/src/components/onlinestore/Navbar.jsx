@@ -1,153 +1,124 @@
-/*
- * Online Store header, displayed by OnlineStoreLayout.
- * Layout sends cart controls, search text and the function that changes the search.
- * Search filters the shop's products by name and animates a hint while empty.
- * Login and the compact account link open /login; Sign Up has no action yet.
- * Tailwind from index.css controls layout: one row above 800px; search moves down at <=800px.
- * At <=480px, smaller gaps and padding help the header fit the screen.
- */
+// Online Store header: shared search, cart controls and customer account links.
 
-// React supplies these two named hooks: useState remembers local values; useEffect manages browser work.
 import { useEffect, useState } from "react";
-// React Router supplies Link; it changes pages without reloading the browser document.
-import { Link } from "react-router-dom"; // The logo returns to "/"; account links open "/login".
+import { Link } from "react-router-dom";
 
-// The full hint text; change it here to update the typing animation.
+// Show this animated hint only while the search field is idle.
 const SEARCH_HINT = "What are you looking for?";
 
-// Times use milliseconds: 1000ms = 1 second. These values control the animation speed.
-// Wait 90ms between steps while adding letters.
+// Typing, deleting and pause delays are in milliseconds.
 const TYPE_DELAY_MS = 90;
-// Wait 45ms between steps while deleting, faster than typing.
 const DELETE_DELAY_MS = 45;
-// Keep the complete hint visible for 1.8 seconds before deleting it.
 const FULL_HINT_PAUSE_MS = 1800;
-// Wait half a second before starting or typing the hint again.
 const RESTART_PAUSE_MS = 500;
 
-// React calls Navbar during rendering; Layout supplies the values/functions inside these braces.
-// totalItemsQuantity is Layout's sum of quantities; it is not the number of different products.
-// onOpenCart opens Layout's cart panel; isCartOpen lets this header describe the same panel state.
-// searchText is Layout's current text; onSearchChange sends a new typed value back to Layout.
-const Navbar = ({ totalItemsQuantity, onOpenCart, isCartOpen, searchText, onSearchChange }) => {
-  // Layout owns searchText; OnlineStorePage forwards that same value to ProductList for filtering.
+// This browser value is only a demo greeting, never proof of API access.
+function loadCustomer() {
+  try {
+    const customer = JSON.parse(sessionStorage.getItem("saveso.customer"));
+    if (customer && customer.customerID && typeof customer.firstName === "string") {
+      return { customerID: customer.customerID, firstName: customer.firstName };
+    }
+  } catch {
+    // Invalid or blocked storage leaves the public store in guest mode.
+  }
+  return null;
+}
 
-  // useState(false) starts with an unfocused input and returns the value plus its setter.
-  // The focus/blur handlers below call this setter so the hint pauses while the customer is typing.
+// Layout supplies the cart controls and shared search value.
+const Navbar = ({ totalItemsQuantity, onOpenCart, isCartOpen, searchText, onSearchChange }) => {
+  // Read the greeting once when this header first opens.
+  const [customer, setCustomer] = useState(loadCustomer);
+
+  // Log out clears this tab's greeting only; it does not revoke server access.
+  function logOutCustomer() {
+    try {
+      sessionStorage.removeItem("saveso.customer");
+    } catch {
+      // The greeting on this page can still be cleared if storage is blocked.
+    }
+    setCustomer(null);
+  }
+
+  // Pause the hint while the customer types in the shared search field.
   const [isSearchFocused, setIsSearchFocused] = useState(false);
 
-  // Start with an empty visible hint; the timer's setter changes only this text, not the customer's search.
+  // The hint is separate from the customer's search text.
   const [searchHint, setSearchHint] = useState("");
 
-  // React calls this initializer function on mount instead of rereading the preference on every render.
-  // The arrow implicitly returns .matches: true asks for less motion, false allows the typing effect.
+  // Respect the visitor's reduced-motion preference.
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(
     () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
   );
 
-  // React runs this setup after Navbar mounts; [] keeps ordinary renders from adding more listeners.
+  // Listen for preference changes and remove the listener when this header closes.
   useEffect(() => {
-    // Get the browser's media-query object so we can read and subscribe to this preference.
     const motionPreference = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
     );
-    // The browser supplies event when its preference changes; event.matches holds the new true/false value.
     const handleMotionChange = (event) => {
-      // Save the preference so the screen can choose a still hint or the typing animation.
       setPrefersReducedMotion(event.matches);
-      // Clear the old hint before using the new mode.
       setSearchHint("");
     };
-    // Pass the function itself, without (), so the browser can call it when a change occurs later.
     motionPreference.addEventListener("change", handleMotionChange);
-    // React stores this returned cleanup function and calls it when the subscription is removed.
-    // Use the same event name and function reference to remove exactly the listener added above.
     return () =>
       motionPreference.removeEventListener("change", handleMotionChange);
   }, []);
 
-  // React reruns this effect when focus, shared search text or the motion preference changes.
-  // Before restarting it, React runs the old cleanup so two typing timers do not run together.
+  // Restart the idle hint when focus, search text or motion preference changes.
   useEffect(() => {
-    // || means any one condition is enough to stop: focus, existing text, or reduced motion.
     if (isSearchFocused || searchText !== "" || prefersReducedMotion) {
-      return; // Leave the effect before creating a timer; the placeholder below chooses what to show.
+      return;
     }
 
-    // These three variables belong to this animation cycle, not to the typed search text.
-    let characterCount = 0; // Number of hint characters to display, starting at 0.
-    let isDeleting = false; // False: add letters; true: delete letters.
-    let timerId; // Keep the timer ID so the pending step can be cancelled.
+    // Keep these values inside one animation cycle.
+    let characterCount = 0;
+    let isDeleting = false;
+    let timerId;
 
-    // The timer calls updateHint one step at a time; each step adds/deletes one letter and schedules the next.
+    // Each timer step adds or removes one letter, then schedules the next step.
     function updateHint() {
-      // The flag selects whether this timer step shortens or grows the visible prefix.
       if (isDeleting) {
-        // While deleting, keep one fewer character.
         characterCount--;
       } else {
-        // While typing, keep one more character.
         characterCount++;
       }
 
-      // slice includes index 0 but stops before characterCount; the setter asks React to show that prefix.
       setSearchHint(SEARCH_HINT.slice(0, characterCount));
 
-      // ! means "not": pause only when adding has reached the complete hint.
+      // Pause at the complete hint before deleting.
       if (!isDeleting && characterCount === SEARCH_HINT.length) {
-        // The full hint is typed: switch to deleting, but wait 1.8 seconds for the user to read it.
         isDeleting = true;
-        timerId = window.setTimeout(updateHint, FULL_HINT_PAUSE_MS); // Save this new timer so cleanup can cancel it.
-        return; // Stop this call so it does not schedule another timer below.
+        timerId = window.setTimeout(updateHint, FULL_HINT_PAUSE_MS);
+        return;
       }
 
-      // Once deletion reaches zero characters, wait before beginning a new adding cycle.
+      // Pause at an empty hint before typing again.
       if (isDeleting && characterCount === 0) {
-        // The hint is empty: switch to typing and schedule a fresh start after half a second.
         isDeleting = false;
-        timerId = window.setTimeout(updateHint, RESTART_PAUSE_MS); // The next callback starts after 500ms.
-        return; // The next step is already scheduled, so skip the code below.
+        timerId = window.setTimeout(updateHint, RESTART_PAUSE_MS);
+        return;
       }
 
-      // ?: returns 45ms when deleting, otherwise 90ms; it does not change the flag itself.
       const nextDelay = isDeleting ? DELETE_DELAY_MS : TYPE_DELAY_MS;
-      // The browser calls updateHint after that delay; saving the ID lets cleanup stop the pending call.
       timerId = window.setTimeout(updateHint, nextDelay);
     }
 
-    // Schedule the first call after half a second to begin the typing cycle.
     timerId = window.setTimeout(updateHint, RESTART_PAUSE_MS);
 
-    // Return a cleanup callback, not clearTimeout's immediate result, so React can stop the latest timer later.
-    // These three dependencies below restart this cycle only when their values change.
+    // Cancel the pending step when this effect restarts or the header closes.
     return () => window.clearTimeout(timerId);
   }, [isSearchFocused, searchText, prefersReducedMotion]);
 
-  // The JSX below describes the screen; className holds Tailwind classes for layout and appearance.
   return (
-    /*
-     * Grid gives logo / search / cart / account their own columns.
-     * minmax(0,1fr) lets search use the remaining space and shrink when needed.
-     * At <=800px, a blank left column balances the two 44px controls to keep the logo centered.
-     * At 481-800px the blank column is 104px; at <=480px it is 96px with 12px outer padding.
-     * gap sets space between groups; px/py set space inside the header.
-     */
+    // Keep logo, search, cart and account controls usable on narrow screens.
     <nav className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-4 px-6 py-4 [@media(480px<width<=800px)]:grid-cols-[104px_minmax(0,1fr)_44px_44px] [@media(max-width:480px)]:grid-cols-[96px_minmax(0,1fr)_44px_44px] [@media(max-width:480px)]:gap-x-[8px] [@media(max-width:480px)]:p-[12px]">
-      {/*
-        Clicking the logo returns to the store homepage at "/".
-        Returning from checkout to the shop keeps the same Layout and cart mounted.
-        aria-label gives the whole link the accessible name "SaveSo home".
-        At <=800px, the logo sits in column 2, row 1.
-        min-w-0 lets the cell shrink; w-[96px]/max-w-full limit the image width.
-        h-auto keeps its proportions; block/mx-auto center it inside its cell.
-        width/height state the original image size; alt supplies a text name for the image.
-      */}
+      {/* Return to the shop without clearing the shared cart. */}
       <Link to="/" aria-label="SaveSo home" className="min-w-0 [@media(max-width:800px)]:col-start-2 [@media(max-width:800px)]:row-start-1 [@media(max-width:800px)]:text-center">
-        {/* h1 marks the brand heading; img supplies the visible logo rather than extra heading text. */}
         <h1>
           <img
             className="w-[96px] max-w-full h-auto block mx-auto"
-            src="/SaveSolLogo.png" // The / URL loads this image from the client public folder.
+            src="/SaveSolLogo.png"
             alt="SaveSo"
             width={451}
             height={438}
@@ -155,24 +126,13 @@ const Navbar = ({ totalItemsQuantity, onOpenCart, isCartOpen, searchText, onSear
         </h1>
       </Link>
 
-      {/*
-        The search wrapper fills its cell up to 640px, with rounded corners and one gray border.
-        At <=800px, search fills row 2. The input fills the wrapper without adding a second border.
-        type="text" accepts ordinary names; aria-label names the input even when its placeholder is hidden.
-        value reads Layout's searchText; onChange sends new text back to Layout.
-        Layout then updates the shared value and returns to the shop when searching from Checkout.
-        placeholder is only an empty-input hint; hide it while focused or while typed text exists.
-        Reduced motion uses the still SEARCH_HINT; otherwise use the animated searchHint.
-        onFocus stops the hint; onBlur lets it restart if the input is empty. Typed text is kept.
-        aria-label names the input for screen readers; the shared text filters products.
-      */}
+      {/* Search stays in Layout so typing from Checkout can open matching shop results. */}
       <div className="w-full max-w-[640px] min-w-0 justify-self-center rounded-full border border-[#808080] [@media(max-width:800px)]:col-span-full [@media(max-width:800px)]:row-start-2">
         <input
           className="w-full min-w-0 px-[14px] py-[10px] border-0 rounded-[inherit] text-center"
           type="text"
           aria-label="Search products"
           value={searchText}
-          // Choose no placeholder while focused/typed; otherwise choose the still or animated hint.
           placeholder={
             isSearchFocused || searchText !== ""
               ? ""
@@ -180,32 +140,21 @@ const Navbar = ({ totalItemsQuantity, onOpenCart, isCartOpen, searchText, onSear
                 ? SEARCH_HINT
                 : searchHint
           }
-          // The browser supplies event; target.value is the input's new string, sent to Layout's callback.
+          // Send new text to Layout; the updated value returns through props.
           onChange={(event) => onSearchChange(event.target.value)}
-          // The browser calls this on focus; pause animation and remove its old partial hint.
+          // Focus pauses the animation without changing the customer's search.
           onFocus={() => {
-            setIsSearchFocused(true); // React rerenders and the effect cleanup cancels the pending timer.
-            setSearchHint(""); // Start the next idle cycle from an empty hint.
+            setIsSearchFocused(true);
+            setSearchHint("");
           }}
-          // The browser calls this when focus leaves; an empty input may animate again after rerendering.
           onBlur={() => {
-            setIsSearchFocused(false); // Let the animation effect reevaluate its three conditions.
-            setSearchHint(""); // Keep a previous partial hint out of the next cycle.
+            setIsSearchFocused(false);
+            setSearchHint("");
           }}
         />
       </div>
 
-      {/*
-        The 44x44px cart button gives fingers more room; flex centers the icon inside its circle.
-        relative anchors the absolute quantity badge to the top-right corner of this button.
-        Layout already adds the quantities; totalItemsQuantity only displays that total in the red badge.
-        At <=800px, cart moves to column 3, row 1. type="button" prevents accidental form submission.
-        Clicking calls onOpenCart from Layout; that function changes the open-cart flag to true.
-        Cart uses that same flag for its slide animation; aria-expanded reports whether it is open.
-        SVG draws the icon: viewBox is the drawing area, strokeWidth is line width, currentColor uses text color.
-        path/d describes the shape; round rounds line ends/corners; size-6 sets the icon size.
-        aria-label names this button; aria-controls points to the matching cart panel ID.
-      */}
+      {/* Display Layout's quantity and open its cart panel. */}
       <button
         type="button"
         onClick={onOpenCart}
@@ -214,9 +163,7 @@ const Navbar = ({ totalItemsQuantity, onOpenCart, isCartOpen, searchText, onSear
         aria-controls="shopping-cart"
         className="relative flex h-[44px] w-[44px] min-w-[44px] items-center justify-center rounded-full border border-[#808080] [@media(max-width:800px)]:col-start-3 [@media(max-width:800px)]:row-start-1"
       >
-        {/* This wrapper keeps the cart-icon CSS hook around the supplied SVG graphic. */}
         <span className="cart-icon">
-          {/* xmlns identifies SVG; fill="none" leaves its interior clear and stroke draws the outline. */}
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
@@ -225,7 +172,6 @@ const Navbar = ({ totalItemsQuantity, onOpenCart, isCartOpen, searchText, onSear
             stroke="currentColor"
             className="size-6"
           >
-            {/* d holds the supplied cart coordinates; round caps/joins soften the line ends and corners. */}
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -233,55 +179,50 @@ const Navbar = ({ totalItemsQuantity, onOpenCart, isCartOpen, searchText, onSear
             />
           </svg>
         </span>
-        {/* && renders the badge only above zero; the count comes from Layout, so this adds no duplicate state. */}
+        {/* Show the badge only when the cart contains units. */}
         {totalItemsQuantity > 0 && (
-          // absolute positions this red badge against the relative button; min-w-4 allows more digits to grow.
           <span className="cart-count absolute -right-1 -top-1 min-w-4 rounded-full bg-red-600 px-1 text-center text-xs leading-4 text-white">
             {totalItemsQuantity}
           </span>
         )}
       </button>
 
-      {/*
-        The account group sits on the right; flex/gap place buttons side by side with space between them.
-        At <=800px, move the group to column 4 and replace Sign Up/Login with the small avatar below.
-        min-w keeps buttons wide enough; whitespace-nowrap keeps labels on one line; px/py add inner padding.
-        Login/account links open the shared login page; Sign Up remains an unfinished button.
-      */}
-      <div className="flex gap-[10px] justify-self-end [@media(max-width:800px)]:col-start-4 [@media(max-width:800px)]:row-start-1 [@media(max-width:480px)]:gap-[6px]">
-        {/* Show this signup label above 800px; type="button" prevents form submission and no action is wired yet. */}
-        <button
-          className="min-w-[110px] whitespace-nowrap rounded-full border border-[#808080] px-[20px] py-[8px] [@media(max-width:800px)]:hidden"
-          type="button"
-        >
-          Sign Up
-        </button>
-        {/* Open Joseph's shared login page; customers can browse the store without signing in. */}
-        <Link
-          className="min-w-[110px] whitespace-nowrap rounded-full border border-[#808080] px-[20px] py-[8px] text-center [@media(max-width:800px)]:hidden"
-          to="/login"
-        >
-          Login
-        </Link>
+      {/* Desktop and mobile controls open the same customer account flow. */}
+      <div className="relative flex min-w-0 gap-[10px] justify-self-end [@media(max-width:800px)]:col-start-4 [@media(max-width:800px)]:row-start-1 [@media(max-width:480px)]:gap-[6px]">
+        {customer ? (
+          <div className="hidden items-center gap-3 [@media(min-width:801px)]:flex">
+            <span className="max-w-40 truncate" title={customer.firstName}>Hi, {customer.firstName}</span>
+            <button type="button" onClick={logOutCustomer} className="min-h-11 rounded-full border border-[#808080] px-5 py-2">
+              Log out
+            </button>
+          </div>
+        ) : (
+          <>
+            <a className="hidden min-h-11 min-w-[110px] items-center justify-center whitespace-nowrap rounded-full border border-[#808080] px-[20px] py-[8px] [@media(min-width:801px)]:inline-flex" href="/customer/signup">Sign Up</a>
+            <a className="hidden min-h-11 min-w-[110px] items-center justify-center whitespace-nowrap rounded-full border border-[#808080] px-[20px] py-[8px] [@media(min-width:801px)]:inline-flex" href="/customer/login">Login</a>
+          </>
+        )}
 
-        {/*
-          The avatar appears only at <=800px; this does not check whether the user is logged in.
-          hidden/flex control visibility; h/w/min-w keep a 44px tap area, and p-[6px] adds inner padding.
-          aria-label names the link "Account"; empty alt avoids reading the decorative image twice.
-          Open the same login page from this compact account control.
-        */}
-        <Link
-          className="hidden h-[44px] w-[44px] min-w-[44px] items-center justify-center rounded-full border border-[#d1d5db] bg-[#f3f4f6] p-[6px] [@media(max-width:800px)]:flex"
-          to="/login"
-          aria-label="Account"
-        >
-          {/* Size the decorative image to its circular link; empty alt keeps the Account label from repeating. */}
-          <img className="h-full w-full" src="/account-avatar.svg" alt="" />
-        </Link>
+        {customer ? (
+          <details className="relative hidden [@media(max-width:800px)]:block">
+            <summary aria-label={`Customer account for ${customer.firstName}`} className="flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-full border border-[#d1d5db] bg-[#f3f4f6] p-[6px] [&::-webkit-details-marker]:hidden">
+              <img className="h-full w-full" src="/account-avatar.svg" alt="" />
+            </summary>
+            <div className="absolute right-0 top-full z-30 mt-2 w-56 rounded-lg border border-gray-300 bg-white p-4 shadow-lg">
+              <p className="whitespace-normal break-words text-sm [text-wrap:wrap]">Hi, {customer.firstName}</p>
+              <button type="button" onClick={logOutCustomer} className="mt-3 min-h-11 w-full rounded-lg border border-gray-500 px-3 py-2">
+                Log out
+              </button>
+            </div>
+          </details>
+        ) : (
+          <a className="hidden h-11 w-11 min-w-11 items-center justify-center rounded-full border border-[#d1d5db] bg-[#f3f4f6] p-[6px] [@media(max-width:800px)]:flex" href="/customer/login" aria-label="Customer account">
+            <img className="h-full w-full" src="/account-avatar.svg" alt="" />
+          </a>
+        )}
       </div>
     </nav>
   );
 };
 
-// Allow OnlineStoreLayout to import and display Navbar.
 export default Navbar;
