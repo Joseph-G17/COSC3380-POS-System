@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom"
 
-const NavBar = () => {
+const NavBar = ({ employee }) => {
   const navigate = useNavigate();
+  //when not set employee == null automatically
 
   return (
       <nav className='flex border-t border-r border-b'>
@@ -19,8 +21,8 @@ const NavBar = () => {
             <button className='button-highlight p-1 border' onClick={()=> navigate('/admin/clock-in')}>
               CLOCK-IN
             </button>
-            <button className='button-highlight p-1 border' onClick={()=> navigate('/admin/profile')}>
-              PROFILE
+            <button className='button-highlight p-1 border' > 
+              Welcome, {employee && employee.firstName}
             </button>
           </section>
         </div>

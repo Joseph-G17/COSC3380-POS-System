@@ -3,26 +3,15 @@ const Universal = require('../models/universalModel');
 
 const { getPostData } = require('../utilities')
 
-// desc: Gets all employees
-// route: GET /api/employee
-async function getEmployees(req, res) {
-  try {
-    const employees = await Universal.findAll('employees');
-
-    res.writeHead(200, {'Content-Type': 'application/json' });
-    res.end(JSON.stringify(employees));
-
-  } catch (error) {
-    console.log(error);
-  }
-} 
+// desc: Gets the employee login information to verify if they exist and checks password
+// route: GET /api/login
 
 async function getEmployeeLogin(req, res){
   const body = await getPostData(req);
   const {username, password} = JSON.parse(body);
   
   const rows = await Employees.findEmployeeLogin(username);
-  const login = rows[0];
+  const login = rows[0]; //only returns one row in this query due to unique username
 
   if(!login || login.employeePassword != password){
     res.writeHead(401, {'Content-Type': 'application/json'});
@@ -30,53 +19,28 @@ async function getEmployeeLogin(req, res){
   }
   else {
     res.writeHead(200, {'Content-Type': 'application/json'});
-    res.end(JSON.stringify({employeeID: login.employeeID, Role: login.Role}));
+    res.end(JSON.stringify({employeeID: login.employeeID, firstName: login.firstName, Role: login.Role}));
   }
 }
 
-// desc: Gets Single Employee
-// route: GET /api/employee/:EmployeeID
-async function getEmployee(req, res, id) {
+async function updateEmployeeHours(req, res) {
   try {
-    const employee = await Universal.findOne('Employees', id)
+    const body = await getPostData(req);
+    const {id, hoursWorked} = JSON.parse(body);
 
-    if(!employee) {
-      res.writeHead(404, {'Content-Type': 'application/json'});
-      res.end(JSON.stringify({ message: 'Employee Not Found'}));
-    }
-    else {
-      res.writeHead(200, {'Content-Type': 'application/json'});
-      res.end(JSON.stringify(employee));
-    }
+    await Employees.updateHours(id, hoursWorked);
+
+    res.writeHead(200, {'Content-Type': 'application/json'});
+    res.end(JSON.stringify({ message: `Employee Hours for ${id} updated with ${hoursWorked}!`}));
+
+  } catch(error) {
+    res.writeHead(404, {'Content-Type': 'application/json'});
+    res.end(JSON.stringify({ message: error.sqlMessage || 'Update failed'})); //send this to the front end when employee hours are over the limit!
   }
-  catch (error) {
-    console.log(error);
-  }
+
 }
 
-// desc: Create an Employee
-// route: POST /api/employees
-async function createEmployee(req, res){
-  try {
-    const body = await getPostData(req); //for raw js data!
-
-    const { firstName, lastName, email} =  JSON.parse(body);
-    const employee = {
-        firstName,
-        lastName,
-        email
-      }
-
-    const newEmployee =  await Employees.create(employee);
-
-    res.writeHead(201, {'Content-Type': 'application/json'});
-    return res.end(JSON.stringify(newEmployee));
-
-  }  catch (error){
-    console.log(error);
-  }
-}
-
+/* ORIGINAL FORM FORM FOR CONTROLLERS
 // desc: Update an Employee
 // route: PUT /api/employees/id
 async function updateEmployee(req, res, id){
@@ -105,33 +69,9 @@ async function updateEmployee(req, res, id){
     console.log(error);
   }
 }
-
-// desc: Deletes Single Employee
-// route: DELETE /api/employee/:EmployeeID
-async function deleteEmployee(req, res, id) {
-  try {
-    //const employee = await Employees.findByID(id);
-
-    if(!employee) {
-      res.writeHead(404, {'Content-Type': 'application/json'});
-      res.end(JSON.stringify({ message: 'Employee Not Found'}));
-    }
-    else {
-      await Employees.remove(id);
-      res.writeHead(200, {'Content-Type': 'application/json'});
-      res.end(JSON.stringify({message: `Employee ${id} removed!`}));
-    }
-  }
-  catch (error) {
-    console.log(error);
-  }
-}
+*/
 
 module.exports = {
-  getEmployees,
   getEmployeeLogin,
-  getEmployee,
-  createEmployee,
-  updateEmployee,
-  deleteEmployee
+  updateEmployeeHours
 }
