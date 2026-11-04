@@ -23,7 +23,10 @@ const ClockInPage = () => {
     return () => clearTimeout(timeout);
 
   }, [clockInMessage])
-  const [timestamp, setTimestamp] = useState(-1);
+  const [timestamp, setTimestamp] = useState(() => {
+    const saved = sessionStorage.getItem('saveso-timestamp');
+    return saved ? Number(saved) : -1;
+  });
   const { employee, setEmployee } = useOutletContext();
 
   const clockIn = async () => {
@@ -60,12 +63,14 @@ const ClockInPage = () => {
       sessionStorage.removeItem('saveso-timestamp');
     
       const insertTime = async () => {
-        const response = await fetch('api/employee hours',{
-          method: "POST",
+        const id = employee.id;
+        const response = await fetch('/api/employee-hours',{
+          method: "PUT",
           headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify(employee.id, hoursWorked)
+          body: JSON.stringify({ id, hoursWorked })
         }); //IN DB SET DEFAULT EMPLOYEE HOURS TO 0!
       }
+      insertTime();
 
     } catch(error){
       
@@ -75,8 +80,8 @@ const ClockInPage = () => {
 
     
   return (
-    <section className="text-center w-1/2 h-3/4 border self-center justify-self-center">
-      <div className="grid grid-rows-[120px_auto] gap-4">
+    <section className="text-center w-3/7 h-3/4 border self-center justify-self-center p-4">
+      <div className="grid grid-rows-[200px_auto] gap-4">
         <div className="flex-col place-content-center-safe border min-w-0 ">
           <h1 className="text-2xl flex-grow-2 underline">Clock In</h1>
           <h2 className="text-3xl truncate bottom-0">{currentTime.toLocaleTimeString()}</h2>
@@ -89,9 +94,9 @@ const ClockInPage = () => {
               <div className="">{clockInMessage} </div>
             )}
           </div>
-          <div className="space-x-10 end-full">
+          <div className="flex justify-between items-center">
             <button onClick={clockIn} className="border button-highlight p-1">CLOCK IN</button>
-            <button onClick={clockOut} className="border button-highlight p-1">CLOCK OUT</button>
+            <button onClick={clockOut} className="border button-highlight p-1 ">CLOCK OUT</button>
           </div>
         </div>
       </div>

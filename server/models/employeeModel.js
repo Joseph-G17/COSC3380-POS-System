@@ -18,6 +18,12 @@ function findEmployeeLogin(username){
   return query(sql, username);
 }
 
+function updateHours(id, hoursWorked){
+  const sql = `UPDATE ?? SET hoursWorked = hoursWorked + ? WHERE EmployeeID = ?`
+  const params = ['employee hours', hoursWorked, id];
+  return query(sql, params);
+}
+
 //INSERT INTO
 function create(employee){ 
   const sql = 'INSERT INTO employees (DepartmentID, FirstName, LastName, Email, Role, BirthDate, HireDate) VALUES (?,?,?,?,?,?,?)'
@@ -48,6 +54,7 @@ function remove(id) {
 module.exports = {
   findAll,
   findEmployeeLogin,
+  updateHours,
   create,
   update,
   remove

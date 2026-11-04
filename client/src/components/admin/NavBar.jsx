@@ -21,7 +21,7 @@ const NavBar = ({ employee }) => {
             <button className='button-highlight p-1 border' onClick={()=> navigate('/admin/clock-in')}>
               CLOCK-IN
             </button>
-            <button className='button-highlight p-1 border'>
+            <button className='button-highlight p-1 border' > 
               Welcome, {employee && employee.firstName}
             </button>
           </section>

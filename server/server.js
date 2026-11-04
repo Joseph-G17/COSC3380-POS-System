@@ -1,6 +1,6 @@
 const http = require('http');
 
-const { getEmployeeLogin } = require('./controllers/employeesController')
+const { getEmployeeLogin, updateEmployeeHours } = require('./controllers/employeesController')
 const { getEntities, getEntity, updateEntity, deleteEntity, getEntityColumns, createEntity } = require('./controllers/universalController');
 const { getReport } = require('./controllers/reportsController')
 
@@ -27,12 +27,12 @@ const handler = (req, res) => {
   if (path !== null) {
     incoming.searchParams.delete('path');
     const rest = incoming.searchParams.toString();
-    req.url = '/api/' + path + (rest ? '?' + rest : '');
+    req.url = '/api/' + path + (rest ? '?' + rest : ''); // change req.url if rest of url exists after path: /api/products?rest or /api/products
   }
 
-  try {
+  try { //keeps spaced strings readable as url's after ?
     const [pathname, search] = req.url.split('?');
-    req.url = decodeURIComponent(pathname) + (search ? '?' + search : '');
+    req.url = decodeURIComponent(pathname) + (search ? '?' + search : ''); //if search space exists in type add it if not don't add anything
   } catch (error) {
     res.writeHead(400, {'Content-Type': 'application/json'});
     return res.end(JSON.stringify({message: 'Bad URL'}));
@@ -56,6 +56,9 @@ const handler = (req, res) => {
   if(req.url === '/api/login' && req.method === 'POST'){
     getEmployeeLogin(req, res);
   }
+  else if(req.url === '/api/employee-hours' && req.method === 'PUT'){
+    updateEmployeeHours(req, res);
+  }
   // ProductList and Sidebar need these customer APIs before generic table matching.
   else if(req.url === '/api/products' && req.method === 'GET'){
     getProducts(req, res);
@@ -67,6 +70,7 @@ const handler = (req, res) => {
     // AnnouncementBar keeps its lowercase URL; use the shared controller's Sales entity.
     getEntities(req, res, 'Sales');
   }
+  //BELOW IS UNIVERSAL
   else if(req.url.match(/^\/api\/([A-Za-z ]+)$/) && req.method === 'GET'){
     const entity = req.url.split('/')[2];
     getEntities(req, res, entity);
