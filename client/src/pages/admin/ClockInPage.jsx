@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
 
-
 const ClockInPage = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const { employee } = useOutletContext();
+  const [timestamp, setTimestamp] = useState(-1);
+  const { employee, setEmployee } = useOutletContext();
 
   useEffect(() => {
     const interval = setInterval(()=> {
@@ -14,6 +14,38 @@ const ClockInPage = () => {
 
     return () => clearInterval(interval);
   }, []); //run once due to our dependency
+
+  const clockIn = () => {
+    try {
+      employee.clockedIn = true;
+      sessionStorage.setItem('saveso-employee', JSON.stringify(employee));
+      //CHANGE DATA IN DATA BASE 
+      setTimestamp(currentDate.getHours());
+    } catch(error){
+      
+      console.log(error);
+    }
+  };
+  const clockOut = () => {
+    try {
+      employee.clockedIn = false;
+      sessionStorage.setItem('saveso-employee', JSON.stringify(employee));
+      setTimestamp(-1);
+      const hoursWorked = currentDate.getHours() - timestamp;
+      console.log(hoursWorked);
+      
+      const insertTime = async () => {
+        const response = await fetch('api/employee hours',{
+          method: "POST",
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(employee.id, hoursWorked)
+        }); //IN DB SET DEFAULT EMPLOYEE HOURS TO 0!
+      }
+    } catch(error){
+      
+      console.log(error);
+    }
+  };
 
     
   return (
@@ -28,8 +60,8 @@ const ClockInPage = () => {
             Welcome, {employee.firstName}
           </div>
           <div>
-            <button>CLOCK IN</button>
-            <button>CLOCK OUT</button>
+            <button onClick={clockIn} className="button-highlight">CLOCK IN</button>
+            <button onClick={clockOut} className="button-highlight">CLOCK OUT</button>
           </div>
         </div>
       </div>

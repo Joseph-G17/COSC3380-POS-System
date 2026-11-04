@@ -15,7 +15,7 @@ const [employeeInfo, setEmployeeInfo] = useState(() => {
 */
 
 const storeEmployeeLogin = (user) => {
-  sessionStorage.setItem('saveso-employee', JSON.stringify({id: user.employeeID, firstName: user.firstName}));
+  sessionStorage.setItem('saveso-employee', JSON.stringify({id: user.employeeID, firstName: user.firstName, clockedIn: false}));
 }
 
 const LoginLayout = () => { 

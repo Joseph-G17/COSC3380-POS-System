@@ -8,7 +8,7 @@ const checkSessionEmployee = () => {
     const user = JSON.parse(sessionStorage.getItem('saveso-employee'));
 
     if(user && user.id && typeof user.firstName == 'string'){
-      return { id: user.id, firstName: user.firstName }
+      return { id: user.id, firstName: user.firstName, clockedIn: user.clockedIn}
     }
   } catch(error){
     console.log(error);
@@ -18,14 +18,16 @@ const checkSessionEmployee = () => {
 //NEXT STEP IS TO ADD CHECKING ROLE TO THIS TO MAKE SURE THEY CAN'T USE ANOTHER DOMAIN (ADMIN IN CASHIER, CASHIER IN LOGIN, ETC.)
 const AdminMainLayout = () => {
   const navigate = useNavigate();
-  const [employee, setEmployee] = useState(checkSessionEmployee);
+  const [employee, setEmployee] = useState(checkSessionEmployee());
   const employeeExists = !!employee;
 
   useEffect(() =>{
     if(!employeeExists)
       navigate('/login', {replace: true});
+    
 
-  }, [employeeExists, navigate])
+
+  }, [employeeExists, navigate]) //check if employee exists on navigate or if employee happens to not exist
 
   return (
     <div className='grid min-h-dvh grid-cols-[15rem_1fr] grid-rows-[auto_1fr]'>
