@@ -6,7 +6,7 @@ import ProductList from "../../components/onlinestore/ProductList";
 // Layout owns cart/search selections; this page loads category labels from the API.
 const OnlineStorePage = () => {
   // Read shared values and callbacks from the parent route instead of copying its state.
-  const { addToCart, searchText, selectedCategoryIds, toggleCategory, clearCategories } = useOutletContext();
+  const { products, productsError, canAddOne, addToCart, searchText, selectedCategoryIds, toggleCategory, clearCategories } = useOutletContext();
   // Sidebar receives these rows plus their loading and failure states.
   const [categories, setCategories] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
@@ -67,7 +67,14 @@ const OnlineStorePage = () => {
         categoriesError={categoriesError}
       />
       {/* ProductList combines the shared name and category filters. */}
-      <ProductList onAddToCart={addToCart} searchText={searchText} selectedCategoryIds={selectedCategoryIds} />
+      <ProductList
+        products={products}
+        errorMessage={productsError}
+        canAddOne={canAddOne}
+        onAddToCart={addToCart}
+        searchText={searchText}
+        selectedCategoryIds={selectedCategoryIds}
+      />
     </div>
   );
 };

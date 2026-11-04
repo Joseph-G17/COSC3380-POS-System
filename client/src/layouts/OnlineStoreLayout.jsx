@@ -8,25 +8,50 @@ import {
 } from "../components/onlinestore/cartStorage";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 
-// Layout owns the cart and filters shared by shop and checkout.
 const OnlineStoreLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  // Navbar changes the search; Sidebar changes the selected category IDs.
   const [searchText, setSearchText] = useState("");
   const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
   // Restore the saved cart before the first save so refresh does not replace it with [].
   const [cartItems, setCartItems] = useState(loadCartItems);
-  // Save the current cart whenever its array changes.
+  const [products, setProducts] = useState(null);
+  const [productsError, setProductsError] = useState("");
+  const [stockVersion, setStockVersion] = useState(0);
+
+  function refreshStock() {
+    setStockVersion(version => version + 1);
+  }
+
+  // The shop and cart use the same stock, including after a refresh on Checkout.
+  useEffect(() => {
+    const controller = new AbortController();
+    async function loadProducts() {
+      setProducts(null);
+      setProductsError("");
+      try {
+        const response = await fetch("/api/products", { signal: controller.signal });
+        const rows = await response.json();
+        if (!response.ok || !Array.isArray(rows)) {
+          throw new Error("Unable to load products");
+        }
+        if (!controller.signal.aborted) setProducts(rows);
+      } catch {
+        if (!controller.signal.aborted) setProductsError("Unable to load products. Please try again");
+      }
+    }
+    loadProducts();
+    return () => controller.abort();
+  }, [location.pathname, stockVersion]);
+
   useEffect(
     function () {
       saveCartItems(cartItems);
     },
     [cartItems],
   );
-  // Panel visibility is separate from the saved cart rows.
   const [isCartOpen, setIsCartOpen] = useState(false);
-  // Count units, not rows: Milk x2 + Apple x3 gives a total of 5.
+  // The badge counts units, so two cartons of milk count as two.
   let totalQuantity = 0;
   for (let i = 0; i < cartItems.length; i++) {
     totalQuantity += cartItems[i].quantity;
@@ -39,10 +64,8 @@ const OnlineStoreLayout = () => {
     }
   }
 
-  // Sidebar sends one category ID; React supplies the previous checkbox selection.
   function toggleCategory(categoryID) {
     const id = String(categoryID);
-    // Return the next checked-ID list to React without changing the old list.
     setSelectedCategoryIds(function (currentIds) {
       const updatedIds = [];
       let wasSelected = false;
@@ -60,48 +83,68 @@ const OnlineStoreLayout = () => {
     });
   }
 
-  // Sidebar calls this to show every category while keeping the name search.
   function clearCategories() {
     setSelectedCategoryIds([]);
   }
 
-  // ProductList calls this on Add and sends the selected product object.
-  function addToCart(product) {
-    // A new cart row starts with one unit.
-    const newItem = { ...product, quantity: 1 };
+  const stockById = new Map();
+  for (const product of products ?? []) {
+    const stock = Number(product.Stock);
+    if (product.Stock != null && String(product.Stock).trim() !== "" && Number.isSafeInteger(stock) && stock >= 0) {
+      stockById.set(Number(product.ItemID), stock);
+    }
+  }
 
-    // React supplies the old cart; return a new array without changing the old objects.
-    setCartItems(function (currentItems) {
-      const updatedItems = [...currentItems];
+  function canAddOne(itemID, items = cartItems) {
+    const id = Number(itemID);
+    const stock = stockById.get(id);
+    if (stock === undefined) return false;
 
-      // Search the cart for this product before adding a new row.
-      for (let i = 0; i < updatedItems.length; i++) {
-        // An existing product gains one unit instead of creating a duplicate row.
-        if (updatedItems[i].ItemID === product.ItemID) {
-          updatedItems[i] = {
-            ...updatedItems[i],
-            quantity: updatedItems[i].quantity + 1,
-          };
-          return updatedItems;
-        }
+    let quantityInCart = 0;
+    for (const item of items) {
+      if (Number(item.ItemID) === id) {
+        quantityInCart = item.quantity ?? 0;
+        break;
       }
-      // No ID matched, so append the new product to the cart.
-      return [...updatedItems, newItem];
+    }
+    return quantityInCart + 1 <= stock;
+  }
+
+  function addToCart(product) {
+    const id = Number(product.ItemID);
+    setCartItems(function (currentItems) {
+      // Check the latest quantity again in case two clicks arrived together.
+      if (!canAddOne(id, currentItems)) return currentItems;
+      const index = currentItems.findIndex(item => Number(item.ItemID) === id);
+      if (index === -1) return [...currentItems, { ...product, ItemID: id, quantity: 1 }];
+
+      const updatedItems = [...currentItems];
+      updatedItems[index] = { ...currentItems[index], quantity: currentItems[index].quantity + 1 };
+      return updatedItems;
     });
   }
 
-  // Clear Cart removes every item from the frontend cart.
   function clearCart() {
     setCartItems([]);
   }
 
-  // Minus removes one unit; the last unit removes the row.
+  // A customer may keep shopping while waiting for the order receipt.
+  function removePurchasedItems(purchased) {
+    const quantities = new Map(purchased.map(item => [item.itemId, item.quantity]));
+    setCartItems(items => items.map(item => ({
+      ...item, quantity: item.quantity - (quantities.get(Number(item.ItemID)) ?? 0),
+    })).filter(item => item.quantity > 0));
+  }
+
+  function removeCartRow(itemID) {
+    setCartItems(items => items.filter(item => item.ItemID !== itemID));
+  }
+
   function deleteCartItem(itemID) {
     setCartItems(function (currentItems) {
       const updateItems = [];
 
       for (let i = 0; i < currentItems.length; i++) {
-        // Keep other products; reduce this row or omit it when its last unit is removed.
         if (currentItems[i].ItemID !== itemID) {
           updateItems.push(currentItems[i]);
         } else if (currentItems[i].quantity > 1) {
@@ -115,16 +158,13 @@ const OnlineStoreLayout = () => {
     });
   }
 
-  // Navbar calls this when the customer opens the cart.
   function openCart() {
     setIsCartOpen(true);
   }
 
-  // Close and Escape hide the cart without removing its items.
   function closeCart() {
     setIsCartOpen(false);
   }
-  // Checkout closes the panel and opens the summary with the same cart.
   function openCheckout() {
     if (cartItems.length === 0) {
       return;
@@ -135,7 +175,6 @@ const OnlineStoreLayout = () => {
 
   return (
     <div>
-      {/* The bar reads campaigns and hides itself when none are active. */}
       <AnnouncementBar />
       <Navbar
         totalItemsQuantity={totalQuantity}
@@ -143,13 +182,22 @@ const OnlineStoreLayout = () => {
         isCartOpen={isCartOpen}
         searchText={searchText}
         onSearchChange={changeSearchText}
+        onClearCart={clearCart}
       />
 
-      {/* Child pages share the cart, search text and category actions. */}
       <Outlet
         context={{
           cartItems,
+          products,
+          productsError,
+          canAddOne,
           addToCart,
+          deleteCartItem,
+          removeCartRow,
+          stockById,
+          refreshStock,
+          removePurchasedItems,
+          totalQuantity,
           searchText,
           selectedCategoryIds,
           toggleCategory,
@@ -158,6 +206,7 @@ const OnlineStoreLayout = () => {
       />
       <Cart
         items={cartItems}
+        canAddOne={canAddOne}
         onAddToCart={addToCart}
         onClearCart={clearCart}
         onDeleteCartItem={deleteCartItem}

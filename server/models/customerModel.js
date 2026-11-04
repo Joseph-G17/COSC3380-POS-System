@@ -1,6 +1,5 @@
 const { query, withTransaction } = require('../sqlConnecter');
 
-// Both account queries return these names for the frontend; dates are formatted in SQL.
 const PUBLIC_CUSTOMER_SELECT = `
   SELECT c.CustomerID AS customerID, c.FirstName AS firstName,
          c.LastName AS lastName, c.Email AS email,
@@ -11,7 +10,6 @@ const PUBLIC_CUSTOMER_SELECT = `
   JOIN \`Customer Logins\` l ON l.CustomerID = c.CustomerID`;
 
 async function findCustomerLogin(username) {
-  // loginCustomer supplies the username. The ? value is passed separately from SQL.
   // storedPassword is used for comparison and is excluded from API replies.
   const sql = `
     SELECT c.CustomerID AS customerID, c.FirstName AS firstName,
@@ -28,8 +26,7 @@ async function findCustomerLogin(username) {
 }
 
 async function createCustomer(data) {
-  // signupCustomer supplies validated fields; the callback saves both linked rows together.
-  // A failed login insert also rolls back the new Customers row.
+  // Roll back the customer row if the login row cannot be saved.
   return withTransaction(async (runQuery) => {
     // The database sets one year of membership; the form cannot choose its expiry.
     const created = await runQuery(
@@ -44,7 +41,6 @@ async function createCustomer(data) {
         'VALUES (?, ?, ?)',
       [created.insertId, data.username, data.password],
     );
-    // Read the saved public details using the new customer ID, then return them.
     const rows = await runQuery(
       PUBLIC_CUSTOMER_SELECT + ' WHERE c.CustomerID = ? LIMIT 1',
       [created.insertId],
@@ -53,4 +49,39 @@ async function createCustomer(data) {
   });
 }
 
-module.exports = { findCustomerLogin, createCustomer };
+// Read the order total and unit prices saved at checkout. Today's catalog prices may differ.
+async function getCustomerOrderHistory(customerId) {
+  const rows = await query(`
+    SELECT CAST(o.OrderID AS CHAR) AS orderId,
+           DATE_FORMAT(o.OrderDate, '%Y-%m-%d %H:%i:%s') AS orderDate,
+           o.OrderType AS orderType, o.OrderTotal AS total,
+           CAST(oi.ItemID AS CHAR) AS itemId, i.ItemName AS name,
+           oi.QuantityOrdered AS quantity, oi.ItemPrice AS unitPrice
+    FROM Orders o
+    LEFT JOIN \`Ordered Items\` oi ON oi.OrderID = o.OrderID
+    LEFT JOIN Items i ON i.ItemID = oi.ItemID
+    WHERE o.CustomerID = ?
+    ORDER BY o.OrderDate DESC, o.OrderID DESC, oi.ItemID`, [customerId]);
+
+  const orders = [];
+  let order;
+  for (const row of rows) {
+    // The query puts every item from the same order next to the others.
+    if (!order || order.orderId !== row.orderId) {
+      order = {
+        orderId: row.orderId, orderDate: row.orderDate, orderType: row.orderType,
+        total: Number(row.total), items: [],
+      };
+      orders.push(order);
+    }
+    if (row.itemId !== null) {
+      order.items.push({
+        itemId: row.itemId, name: row.name,
+        quantity: row.quantity, unitPrice: Number(row.unitPrice),
+      });
+    }
+  }
+  return orders;
+}
+
+module.exports = { findCustomerLogin, createCustomer, getCustomerOrderHistory };
