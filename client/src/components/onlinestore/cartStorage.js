@@ -1,4 +1,3 @@
-// Use one key so this tab's cart does not overwrite other saved page data.
 const CART_STORAGE_KEY = "saveso.cart.v1";
 
 // Restore this tab's cart after refresh. Browser storage is not the database.
@@ -9,9 +8,7 @@ export function loadCartItems() {
       return [];
     }
 
-    // Check saved rows before using their IDs, prices or quantities.
     const savedItems = JSON.parse(savedText);
-    // Ignore a saved value that is not an array.
     if (!Array.isArray(savedItems)) {
       return [];
     }
@@ -40,7 +37,6 @@ export function loadCartItems() {
       }
 
       seenIDs.push(itemID);
-      // Keep valid, unique rows and copy their checked values.
       validItems.push({ ...item, ItemID: itemID, ItemPrice: price, quantity });
     }
     return validItems;
@@ -50,10 +46,8 @@ export function loadCartItems() {
   }
 }
 
-// Save after React applies an Add, Minus or Clear cart update.
 export function saveCartItems(items) {
   try {
-    // Saving [] also clears a previously full cart.
     window.sessionStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
   } catch {
     // If storage is blocked, the current cart still works until the page reloads.

@@ -135,7 +135,44 @@ async function adjustItemStock(id, change) {
   return rows[0].Stock;
 }
 
-async function createOrder({ employeeId, customerId, paymentMethod, items }) {
+async function getLatestCustomerOrderId(customerId) {
+  const rows = await query('SELECT MAX(OrderID) AS latest FROM Orders WHERE CustomerID = ?', [customerId]);
+  return Number(rows[0].latest || 0);
+}
+
+// The saved cart belongs to the first order after its starting ID, even after another order is placed.
+async function previousOnlineReceipt(runQuery, customerId, previousOrderId, orderType, deliveryAddress, paymentMethod, items, reconcileOnly) {
+  const addressColumn = reconcileOnly ? 'NULL AS DeliveryAddress' : 'DeliveryAddress';
+  const orders = await runQuery(
+    `SELECT OrderID, OrderType, PaymentMethod, OrderTotal, ${addressColumn} FROM Orders
+     WHERE CustomerID = ? AND OrderID >= ? ORDER BY OrderID LIMIT 2`, [customerId, previousOrderId]
+  );
+  const validStart = previousOrderId === 0 || Number(orders[0]?.OrderID) === previousOrderId;
+  const nextOrder = orders[previousOrderId === 0 ? 0 : 1];
+  if (validStart && !nextOrder) return null;
+
+  if (validStart && nextOrder.OrderType === orderType && nextOrder.PaymentMethod === paymentMethod &&
+      nextOrder.DeliveryAddress === deliveryAddress) {
+    const rows = await runQuery(
+      'SELECT ItemID, QuantityOrdered FROM `Ordered Items` WHERE OrderID = ? ORDER BY ItemID',
+      [nextOrder.OrderID]
+    );
+    if (rows.length === items.length && rows.every((row, i) =>
+      Number(row.ItemID) === items[i].itemId && Number(row.QuantityOrdered) === items[i].quantity)) {
+      return { OrderID: nextOrder.OrderID, CustomerID: customerId, OrderTotal: nextOrder.OrderTotal,
+        orderType, deliveryAddress, paymentMethod };
+    }
+  }
+
+  const error = new Error('Another order was placed. Review your cart before ordering again.');
+  error.statusCode = 409;
+  error.code = 'ORDER_HISTORY_CHANGED';
+  throw error;
+}
+
+async function createOrder({ employeeId, customerId, paymentMethod, items, orderType = 'In-Store',
+  previousOrderId, deliveryAddress = null, reconcileOnly = false }) {
+  const onlineOrder = orderType === 'Pickup' || orderType === 'Delivery';
   const connection = await getConnection();
   const runQuery = (sql, params = []) => new Promise((resolve, reject) => {
     connection.query(sql, params, (error, results) => {
@@ -149,18 +186,9 @@ async function createOrder({ employeeId, customerId, paymentMethod, items }) {
       connection.beginTransaction((error) => error ? reject(error) : resolve());
     });
 
-    const employees = await runQuery(
-      'SELECT `EmployeeID` FROM `Employees` WHERE `EmployeeID` = ?',
-      [employeeId]
-    );
-    if (employees.length === 0) {
-      const error = new Error('Cashier employee ID was not found');
-      error.statusCode = 404;
-      throw error;
-    }
-
+    // Lock the customer before checking for a receipt so two requests cannot buy the cart twice.
     const customers = await runQuery(
-      'SELECT `CustomerID` FROM `Customers` WHERE `CustomerID` = ?',
+      'SELECT CustomerID FROM Customers WHERE CustomerID = ?' + (onlineOrder ? ' FOR UPDATE' : ''),
       [customerId]
     );
     if (customers.length === 0) {
@@ -170,6 +198,28 @@ async function createOrder({ employeeId, customerId, paymentMethod, items }) {
     }
 
     const sortedItems = [...items].sort((left, right) => left.itemId - right.itemId);
+    if (onlineOrder) {
+      const receipt = await previousOnlineReceipt(runQuery, customerId, previousOrderId,
+        orderType, deliveryAddress, paymentMethod, sortedItems, reconcileOnly);
+      if (receipt) {
+        await connection.promise().commit();
+        return receipt;
+      }
+      if (reconcileOnly) {
+        const error = new Error('Your previous pickup order was not placed. Choose how to receive your order.');
+        error.statusCode = 409;
+        error.code = 'LEGACY_CHECKOUT_NOT_PLACED';
+        throw error;
+      }
+    }
+
+    const employees = await runQuery('SELECT EmployeeID FROM Employees WHERE EmployeeID = ?', [employeeId]);
+    if (employees.length === 0) {
+      const error = new Error(onlineOrder ? 'Online checkout is unavailable. Please contact the store.' : 'Cashier employee ID was not found');
+      error.statusCode = onlineOrder ? 503 : 404;
+      throw error;
+    }
+
     const itemPlaceholders = sortedItems.map(() => '?').join(', ');
     const itemRows = await runQuery(
       `SELECT \`ItemID\`, \`ItemPrice\` FROM \`Items\` WHERE \`ItemID\` IN (${itemPlaceholders}) ORDER BY \`ItemID\` FOR UPDATE`,
@@ -214,17 +264,35 @@ async function createOrder({ employeeId, customerId, paymentMethod, items }) {
       inventoryByItemId.set(itemId, itemInventory);
     }
 
+    const fields = { EmployeeID: employeeId, CustomerID: customerId, OrderType: orderType,
+      OrderTotal: (totalInCents / 100).toFixed(2), PaymentMethod: paymentMethod };
+    if (onlineOrder) fields.DeliveryAddress = deliveryAddress;
+    const orderResult = await runQuery('INSERT INTO `Orders` SET ?, OrderDate = NOW()', [fields]);
+
     for (const item of orderItems) {
       const itemInventory = inventoryByItemId.get(item.itemId) ?? [];
-      let available = itemInventory.reduce((sum, row) => sum + Number(row.Stock), 0);
+      const available = itemInventory.reduce((sum, row) => sum + Number(row.Stock), 0);
       if (available < item.quantity) {
         const error = new Error(`Insufficient stock for item ${item.itemId}`);
         error.statusCode = 409;
         throw error;
       }
 
+      await runQuery(
+        'INSERT INTO `Ordered Items` (`OrderID`, `ItemID`, `QuantityOrdered`, `ItemPrice`) VALUES (?, ?, ?, ?)',
+        [orderResult.insertId, item.itemId, item.quantity, (item.priceInCents / 100).toFixed(2)]
+      );
+
+      // A database trigger may have already deducted the line. Count it just once.
+      const currentLots = await runQuery(
+        'SELECT InventoryID, Stock FROM Inventory WHERE ItemID = ? ORDER BY InventoryID FOR UPDATE', [item.itemId]
+      );
+      const stockAfterLine = currentLots.reduce((sum, lot) => sum + Number(lot.Stock), 0);
+      if (stockAfterLine === available - item.quantity) continue;
+      if (stockAfterLine !== available) throw new Error('Unexpected stock change while placing the order');
+
       let remaining = item.quantity;
-      for (const inventory of itemInventory) {
+      for (const inventory of currentLots) {
         if (remaining === 0) break;
         const decrement = Math.min(remaining, Number(inventory.Stock));
         if (decrement === 0) continue;
@@ -237,18 +305,6 @@ async function createOrder({ employeeId, customerId, paymentMethod, items }) {
       }
     }
 
-    const orderResult = await runQuery(
-      'INSERT INTO `Orders` (`EmployeeID`, `CustomerID`, `OrderType`, `OrderTotal`, `PaymentMethod`, `OrderDate`) VALUES (?, ?, ?, ?, ?, NOW())',
-      [employeeId, customerId, 'In-Store', (totalInCents / 100).toFixed(2), paymentMethod]
-    );
-
-    for (const item of orderItems) {
-      await runQuery(
-        'INSERT INTO `Ordered Items` (`OrderID`, `ItemID`, `QuantityOrdered`, `ItemPrice`) VALUES (?, ?, ?, ?)',
-        [orderResult.insertId, item.itemId, item.quantity, (item.priceInCents / 100).toFixed(2)]
-      );
-    }
-
     await new Promise((resolve, reject) => {
       connection.commit((error) => error ? reject(error) : resolve());
     });
@@ -256,7 +312,8 @@ async function createOrder({ employeeId, customerId, paymentMethod, items }) {
     return {
       OrderID: orderResult.insertId,
       CustomerID: customerId,
-      OrderTotal: (totalInCents / 100).toFixed(2)
+      OrderTotal: fields.OrderTotal,
+      ...(onlineOrder ? { orderType, deliveryAddress, paymentMethod } : {}),
     };
   } catch (error) {
     try {
@@ -283,5 +340,6 @@ module.exports = {
   remove,
   authenticateEmployee,
   adjustItemStock,
-  createOrder
+  createOrder,
+  getLatestCustomerOrderId
 }

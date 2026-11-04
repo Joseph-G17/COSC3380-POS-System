@@ -1,8 +1,6 @@
 import { useEffect, useRef } from "react";
 
-// Layout owns the cart items and actions; this component displays them.
-const Cart = ({ items, onAddToCart, onClearCart, onDeleteCartItem, isCartOpen, onCloseCart, onCheckout }) => {
-  // React stores the Close button here so the opening effect can focus it.
+const Cart = ({ items, canAddOne, onAddToCart, onClearCart, onDeleteCartItem, isCartOpen, onCloseCart, onCheckout }) => {
   const closeButton = useRef(null);
 
   // Move focus to Close on opening and return it to the previous control on closing.
@@ -28,7 +26,6 @@ const Cart = ({ items, onAddToCart, onClearCart, onDeleteCartItem, isCartOpen, o
     totalCents += priceCents * items[i].quantity;
   }
 
-  // Render one cart row with Minus and Plus actions.
   function showCartItems(item) {
     const priceCents = Math.round(Number(item.ItemPrice) * 100);
     return (
@@ -36,7 +33,6 @@ const Cart = ({ items, onAddToCart, onClearCart, onDeleteCartItem, isCartOpen, o
         <p style={{ textWrap: "wrap", overflowWrap: "anywhere" }}>{item.ItemName}</p>
         <p className="mt-1">Price: ${(priceCents / 100).toFixed(2)}</p>
         <div className="mt-2 flex items-center gap-2">
-          {/* Minus removes one unit; the last unit removes the row. */}
           <button
             type="button"
             aria-label={"Remove one " + item.ItemName}
@@ -52,12 +48,12 @@ const Cart = ({ items, onAddToCart, onClearCart, onDeleteCartItem, isCartOpen, o
             <span className="sr-only">Quantity: </span>
             {item.quantity}
           </span>
-          {/* Plus uses Layout's shared Add action for this product. */}
           <button
             type="button"
             aria-label={"Add one " + item.ItemName}
             title="Add one"
-            className="inline-flex size-11 shrink-0 items-center justify-center rounded border hover:bg-gray-100"
+            disabled={!canAddOne(item.ItemID)}
+            className="inline-flex size-11 shrink-0 items-center justify-center rounded border enabled:hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
             onClick={() => onAddToCart(item)}
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6" aria-hidden="true" focusable="false">
@@ -89,13 +85,12 @@ const Cart = ({ items, onAddToCart, onClearCart, onDeleteCartItem, isCartOpen, o
           }
         }}
         className={
-          "pointer-events-auto absolute right-0 top-0 h-full w-full max-w-sm overflow-x-hidden overflow-y-auto border-l bg-white p-4 transition-transform duration-300 ease-out motion-reduce:transition-none " +
+          "pointer-events-auto absolute right-0 top-0 h-full w-full max-w-sm overflow-x-hidden overflow-y-auto overscroll-contain border-l bg-white px-4 pb-[max(1rem,env(safe-area-inset-bottom))] transition-transform duration-300 ease-out motion-reduce:transition-none " +
           cartPosition
         }
       >
-        <div className="mb-4 flex items-center justify-between gap-4">
+        <div className="sticky top-0 z-10 mb-4 flex items-center justify-between gap-4 bg-white py-3">
           <h2 id="shopping-cart-title">Your cart</h2>
-          {/* Close hides the panel without removing cart items. */}
           <button
             ref={closeButton}
             type="button"
@@ -110,13 +105,11 @@ const Cart = ({ items, onAddToCart, onClearCart, onDeleteCartItem, isCartOpen, o
           </button>
         </div>
 
-        {/* An empty cart has no rows and cannot continue to Checkout. */}
         {items.length === 0 && (
           <p role="status" className="mb-4 text-gray-600" style={{ textWrap: "wrap", overflowWrap: "anywhere" }}>
             Your cart is empty. Add items from the shop to get started.
           </p>
         )}
-        {/* Layout's current rows also determine the total below. */}
         {items.map(showCartItems)}
         <p
           className="mt-4 flex items-center justify-between gap-4 border-t pt-4 font-semibold"
@@ -126,7 +119,6 @@ const Cart = ({ items, onAddToCart, onClearCart, onDeleteCartItem, isCartOpen, o
           <span>Total</span>
           <span>${(totalCents / 100).toFixed(2)}</span>
         </p>
-        {/* Continue with the same cart; do not submit an empty cart. */}
         <button
           type="button"
           disabled={items.length === 0}
@@ -135,7 +127,6 @@ const Cart = ({ items, onAddToCart, onClearCart, onDeleteCartItem, isCartOpen, o
         >
           Checkout
         </button>
-        {/* Clear removes every row through Layout's shared action. */}
         <button
           type="button"
           onClick={onClearCart}

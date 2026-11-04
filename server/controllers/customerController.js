@@ -1,19 +1,17 @@
 const Customers = require('../models/customerModel');
+const { issueCustomerToken } = require('../customerCheckoutToken');
 
-// The signup form sends account fields here through POST /api/customer/signup.
-// This demo checks credentials only; protected APIs will need server sessions later.
 async function signupCustomer(req, res) {
   try {
     const body = await readJsonBody(req);
     const fields = signupFields(body);
     const customer = await Customers.createCustomer(fields);
-    sendJson(res, 201, { customer: publicCustomer(customer) });
+    sendJson(res, 201, { customer: publicCustomer(customer), checkoutToken: issueCustomerToken(customer.customerID) });
   } catch (error) {
     sendError(res, error);
   }
 }
 
-// The login form sends a username and password; read the account, then compare them.
 // Customer Logins stays separate from Joseph's staff login.
 async function loginCustomer(req, res) {
   try {
@@ -23,7 +21,7 @@ async function loginCustomer(req, res) {
     if (!customer || fields.password !== customer.storedPassword) {
       throw requestError(401, 'Invalid username or password.');
     }
-    sendJson(res, 200, { customer: publicCustomer(customer) });
+    sendJson(res, 200, { customer: publicCustomer(customer), checkoutToken: issueCustomerToken(customer.customerID) });
   } catch (error) {
     sendError(res, error);
   }
@@ -41,7 +39,6 @@ function publicCustomer(customer) {
   };
 }
 
-// Both handlers send a status and JSON for the form to read; account replies are not cached.
 function sendJson(res, status, body) {
   res.writeHead(status, {
     'Content-Type': 'application/json; charset=utf-8',
@@ -51,14 +48,12 @@ function sendJson(res, status, body) {
   res.end(JSON.stringify(body));
 }
 
-// Validation helpers attach a status so sendError can return the right form message.
 function requestError(status, message) {
   const error = new Error(message);
   error.status = status;
   return error;
 }
 
-// Expected input and duplicate-account errors get messages the form can show.
 function sendError(res, error) {
   if (Number.isInteger(error.status) && error.status >= 400 && error.status < 500) {
     return sendJson(res, error.status, { message: error.message });
@@ -71,7 +66,6 @@ function sendError(res, error) {
   sendJson(res, 500, { message: 'Unable to complete the request. Please try again.' });
 }
 
-// Accept a JSON form body and resolve it after Node has received all its parts.
 function readJsonBody(req) {
   if (req.headers['sec-fetch-site'] === 'cross-site') {
     throw requestError(403, 'Use the store website to submit this request.');
@@ -80,22 +74,22 @@ function readJsonBody(req) {
     throw requestError(415, 'Send the request as application/json.');
   }
   return new Promise((resolve, reject) => {
+    const maxBodyBytes = 16 * 1024;
+    let bytesReceived = 0;
     let text = '';
     req.setEncoding('utf8');
-    // Node calls this for each part of the body; collect at most 16 KB.
+    // A form can arrive in pieces. Count the bytes as each piece arrives.
     req.on('data', (chunk) => {
-      if (text === null) return;
-      if (Buffer.byteLength(text) + Buffer.byteLength(chunk) > 16 * 1024) {
-        // null tells later data/end callbacks that this request was already rejected.
-        text = null;
+      if (bytesReceived > maxBodyBytes) return;
+      bytesReceived += Buffer.byteLength(chunk);
+      if (bytesReceived > maxBodyBytes) {
         reject(requestError(413, 'The request is too large.'));
         return;
       }
       text += chunk;
     });
-    // Once the body is complete, give its object to signup/login or reject invalid JSON.
     req.on('end', () => {
-      if (text === null) return;
+      if (bytesReceived > maxBodyBytes) return;
       try {
         const body = JSON.parse(text);
         if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Error();
@@ -109,7 +103,6 @@ function readJsonBody(req) {
   });
 }
 
-// Field checks use this to require a string, trim its edges and limit its length.
 function limitedText(body, name, label, maximum) {
   let value = '';
   if (typeof body[name] === 'string') value = body[name].trim();
@@ -133,7 +126,6 @@ function loginFields(body, signup) {
   return { username, password: body.password };
 }
 
-// Keep only the signup inputs needed by Customers and Customer Logins.
 function signupFields(body) {
   const fields = loginFields(body, true);
   fields.firstName = limitedText(body, 'firstName', 'First name', 30);
@@ -149,4 +141,4 @@ function signupFields(body) {
   return fields;
 }
 
-module.exports = { signupCustomer, loginCustomer };
+module.exports = { signupCustomer, loginCustomer, readJsonBody, sendJson };

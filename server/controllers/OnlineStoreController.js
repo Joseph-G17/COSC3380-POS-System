@@ -1,10 +1,10 @@
-const Universal = require("../models/universalModel");
+const Item = require("../models/itemModel");
 
 // server.js calls this for GET /api/products; ProductList receives the Items array.
 async function getProducts(req, res) {
   try {
-    // Wait for the shared model, including an empty array when Items has no rows.
-    const products = await Universal.findAll("Items");
+    // Include the total stock for each item in the shop.
+    const products = await Item.findall("Items");
     res.writeHead(200, { "Content-Type": "application/json" });
     res.end(JSON.stringify(products));
   } catch (error) {

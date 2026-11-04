@@ -15,10 +15,13 @@ const {
   loginCustomer,
 } = require('./controllers/customerController');
 
-// The customer forms use these two POST URLs; /api/login remains the staff route.
+const { getCheckout, getOrderHistory, placeOnlineOrder } = require('./controllers/customerOrderController');
+
 const customerRoutes = {
-  '/api/customer/signup': { method: 'POST', handle: signupCustomer },
-  '/api/customer/login': { method: 'POST', handle: loginCustomer },
+  '/api/customer/signup': { POST: signupCustomer },
+  '/api/customer/login': { POST: loginCustomer },
+  '/api/customer/checkout': { GET: getCheckout },
+  '/api/customer/orders': { GET: getOrderHistory, POST: placeOnlineOrder },
 };
 
 const handler = (req, res) => {
@@ -42,15 +45,14 @@ const handler = (req, res) => {
   const customerRoute = customerRoutes[req.url.split('?')[0]];
   if (customerRoute) {
     res.setHeader('Cache-Control', 'no-store');
-    // Tell the browser that these form routes require POST.
-    if (req.method !== customerRoute.method) {
+    if (!Object.hasOwn(customerRoute, req.method)) {
       res.writeHead(405, {
         'Content-Type': 'application/json',
-        Allow: customerRoute.method,
+        Allow: Object.keys(customerRoute).join(', '),
       });
       return res.end(JSON.stringify({ message: 'Method not allowed' }));
     }
-    return customerRoute.handle(req, res);
+    return customerRoute[req.method](req, res);
   }
 
   if(req.url === '/api/login' && req.method === 'POST'){

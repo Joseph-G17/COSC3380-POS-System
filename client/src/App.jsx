@@ -3,6 +3,7 @@ import { Route, createBrowserRouter, createRoutesFromElements, RouterProvider, N
 import LoginLayout from './layouts/LoginLayout'
 import CustomerLoginPage from './pages/customer/CustomerLoginPage';
 import CustomerSignupPage from './pages/customer/CustomerSignupPage';
+import CustomerProfilePage from './pages/customer/CustomerProfilePage';
 
 import AdminMainLayout from './layouts/AdminMainLayout';
 import HomePage from './pages/admin/HomePage';
@@ -34,6 +35,7 @@ const App = () => {
           <Route index element={<OnlineStorePage />} />
           {/* This child opens /checkout inside Layout; F5 restores its cart from this tab's saved data. */}
           <Route path='checkout' element={<CheckoutPage />} />
+          <Route path='customer/profile' element={<CustomerProfilePage />} />
         </Route>
 
         {/* Store Login/Sign Up opens customer forms; their staff link continues to /login. */}
