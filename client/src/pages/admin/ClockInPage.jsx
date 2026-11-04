@@ -2,38 +2,63 @@ import { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
 
 const ClockInPage = () => {
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [timestamp, setTimestamp] = useState(-1);
-  const { employee, setEmployee } = useOutletContext();
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
     const interval = setInterval(()=> {
 
-      setCurrentDate(new Date());
+      setCurrentTime(new Date());
     }, 1000); //updates every second
 
     return () => clearInterval(interval);
   }, []); //run once due to our dependency
 
-  const clockIn = () => {
+  const [clockInMessage, setClockInMessage] = useState("");
+
+  useEffect(() => {
+    if (!clockInMessage)
+      return;
+
+    const timeout = setTimeout(() => { setClockInMessage("");}, 3000);
+    return () => clearTimeout(timeout);
+
+  }, [clockInMessage])
+  const [timestamp, setTimestamp] = useState(-1);
+  const { employee, setEmployee } = useOutletContext();
+
+  const clockIn = async () => {
+    if(employee.clockedIn == true)
+      return;
+
     try {
       employee.clockedIn = true;
       sessionStorage.setItem('saveso-employee', JSON.stringify(employee));
-      //CHANGE DATA IN DATA BASE 
-      setTimestamp(currentDate.getHours());
+      
+      const now = Date.now();
+      await setTimestamp(now);
+      sessionStorage.setItem('saveso-timestamp', String(now));
+      setClockInMessage(`Clocked in at ${currentTime.toLocaleTimeString()}`);
+      
     } catch(error){
       
       console.log(error);
     }
   };
   const clockOut = () => {
+    if(employee.clockedIn == false)
+      return
+
     try {
+      sessionStorage.setItem('saveso-employee', JSON.stringify(employee));
+      const minutesWorked = Math.round((Date.now() - timestamp) / 60000);
+      const hoursWorked = minutesWorked / 60;
+      setClockInMessage(`Clocked out. You worked ${hoursWorked.toFixed(2)} hours.`);
       employee.clockedIn = false;
       sessionStorage.setItem('saveso-employee', JSON.stringify(employee));
+
       setTimestamp(-1);
-      const hoursWorked = currentDate.getHours() - timestamp;
-      console.log(hoursWorked);
-      
+      sessionStorage.removeItem('saveso-timestamp');
+    
       const insertTime = async () => {
         const response = await fetch('api/employee hours',{
           method: "POST",
@@ -41,6 +66,7 @@ const ClockInPage = () => {
           body: JSON.stringify(employee.id, hoursWorked)
         }); //IN DB SET DEFAULT EMPLOYEE HOURS TO 0!
       }
+
     } catch(error){
       
       console.log(error);
@@ -53,15 +79,19 @@ const ClockInPage = () => {
       <div className="grid grid-rows-[120px_auto] gap-4">
         <div className="flex-col place-content-center-safe border min-w-0 ">
           <h1 className="text-2xl flex-grow-2 underline">Clock In</h1>
-          <h2 className="text-3xl truncate bottom-0">{currentDate.toLocaleTimeString()}</h2>
+          <h2 className="text-3xl truncate bottom-0">{currentTime.toLocaleTimeString()}</h2>
         </div>
-        <div className="grid grid-rows-[100px_auto]">
-          <div>
-            Welcome, {employee.firstName}
+
+        <div className="grid grid-rows-[100px_auto] min-w-0">
+          <div className="text-xl truncate">
+            <p> Welcome, {employee && employee.firstName} </p>
+            {clockInMessage && (
+              <div className="">{clockInMessage} </div>
+            )}
           </div>
-          <div>
-            <button onClick={clockIn} className="button-highlight">CLOCK IN</button>
-            <button onClick={clockOut} className="button-highlight">CLOCK OUT</button>
+          <div className="space-x-10 end-full">
+            <button onClick={clockIn} className="border button-highlight p-1">CLOCK IN</button>
+            <button onClick={clockOut} className="border button-highlight p-1">CLOCK OUT</button>
           </div>
         </div>
       </div>
