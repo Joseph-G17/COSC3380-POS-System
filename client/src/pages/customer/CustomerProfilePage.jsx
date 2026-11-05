@@ -35,7 +35,7 @@ export default function CustomerProfilePage() {
           </p>
         )}
       </section>
-      <CustomerOrderHistory key={customer.customerID + "/" + customer.checkoutToken} token={customer.checkoutToken} />
+      <CustomerOrderHistory key={customer.customerID} customerId={customer.customerID} />
     </main>
   );
 }

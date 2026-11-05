@@ -1,12 +1,11 @@
 const Customers = require('../models/customerModel');
-const { issueCustomerToken } = require('../customerCheckoutToken');
 
 async function signupCustomer(req, res) {
   try {
     const body = await readJsonBody(req);
     const fields = signupFields(body);
     const customer = await Customers.createCustomer(fields);
-    sendJson(res, 201, { customer: publicCustomer(customer), checkoutToken: issueCustomerToken(customer.customerID) });
+    sendJson(res, 201, { customer: publicCustomer(customer) });
   } catch (error) {
     sendError(res, error);
   }
@@ -21,7 +20,7 @@ async function loginCustomer(req, res) {
     if (!customer || fields.password !== customer.storedPassword) {
       throw requestError(401, 'Invalid username or password.');
     }
-    sendJson(res, 200, { customer: publicCustomer(customer), checkoutToken: issueCustomerToken(customer.customerID) });
+    sendJson(res, 200, { customer: publicCustomer(customer) });
   } catch (error) {
     sendError(res, error);
   }

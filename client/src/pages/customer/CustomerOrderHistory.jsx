@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 
 const currency = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 
@@ -32,28 +31,22 @@ function OrderList({ orders }) {
   );
 }
 
-export default function CustomerOrderHistory({ token }) {
+export default function CustomerOrderHistory({ customerId }) {
   const [orders, setOrders] = useState([]);
   const [status, setStatus] = useState("loading");
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    if (!token) return;
     const controller = new AbortController();
 
     async function loadOrders() {
       try {
-        // The server uses the login token to find this customer's receipts.
-        const response = await fetch("/api/customer/orders", {
-          headers: { Authorization: "Bearer " + token },
+        // The server finds this customer's orders by the ID saved at login.
+        const response = await fetch("/api/customer/orders?customerId=" + customerId, {
           cache: "no-store",
           signal: controller.signal,
         });
         if (controller.signal.aborted) return;
-        if (response.status === 401) {
-          setStatus("expired");
-          return;
-        }
         if (!response.ok) throw new Error();
         const data = await response.json();
         if (!Array.isArray(data.orders)) throw new Error();
@@ -67,29 +60,21 @@ export default function CustomerOrderHistory({ token }) {
 
     loadOrders();
     return () => controller.abort();
-  }, [token, attempt]);
+  }, [customerId, attempt]);
 
   function refresh() {
     setStatus("loading");
     setAttempt(previous => previous + 1);
   }
 
-  const needsLogin = token === undefined || status === "expired";
   return (
     <section aria-labelledby="order-history" className="mt-4 rounded-2xl border border-gray-200 bg-white p-5 sm:p-8">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 id="order-history" className="text-2xl">Order history</h2>
-        {token && !needsLogin && (
-          <button type="button" onClick={refresh} disabled={status === "loading"}
-            className="min-h-11 text-sm text-green-900 underline disabled:opacity-50">Refresh orders</button>
-        )}
+        <button type="button" onClick={refresh} disabled={status === "loading"}
+          className="min-h-11 text-sm text-green-900 underline disabled:opacity-50">Refresh orders</button>
       </div>
-      {needsLogin && <p className="mt-3 text-wrap!">
-        <Link to="/customer/login?next=/customer/profile" className="text-green-900 underline">Log in again</Link>
-        {" "}to see your orders.
-      </p>}
-      {token === null && <p className="mt-3 text-wrap!">Order history is temporarily unavailable.</p>}
-      {token && status === "loading" && <p role="status" className="mt-3">Loading orders…</p>}
+      {status === "loading" && <p role="status" className="mt-3">Loading orders…</p>}
       {status === "error" && <p role="alert" className="mt-3 text-wrap!">We couldn’t load your orders. Select Refresh orders to try again.</p>}
       {status === "ready" && <OrderList orders={orders} />}
     </section>
