@@ -50,7 +50,7 @@ function CustomerSignupPage() {
       } else if (!data.customer || !data.customer.customerID ||
                  typeof data.customer.firstName !== "string") {
         setErrorMessage("The server did not confirm your account. Please try again.");
-      } else if (saveCustomer(data.customer, data.checkoutToken)) {
+      } else if (saveCustomer(data.customer)) {
         navigate(next, { replace: true });
         return;
       } else {

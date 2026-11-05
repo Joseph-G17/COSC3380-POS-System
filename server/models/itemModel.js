@@ -135,43 +135,14 @@ async function adjustItemStock(id, change) {
   return rows[0].Stock;
 }
 
-async function getLatestCustomerOrderId(customerId) {
-  const rows = await query('SELECT MAX(OrderID) AS latest FROM Orders WHERE CustomerID = ?', [customerId]);
-  return Number(rows[0].latest || 0);
-}
-
-// The saved cart belongs to the first order after its starting ID, even after another order is placed.
-async function previousOnlineReceipt(runQuery, customerId, previousOrderId, orderType, deliveryAddress, paymentMethod, items, reconcileOnly) {
-  const addressColumn = reconcileOnly ? 'NULL AS DeliveryAddress' : 'DeliveryAddress';
-  const orders = await runQuery(
-    `SELECT OrderID, OrderType, PaymentMethod, OrderTotal, ${addressColumn} FROM Orders
-     WHERE CustomerID = ? AND OrderID >= ? ORDER BY OrderID LIMIT 2`, [customerId, previousOrderId]
-  );
-  const validStart = previousOrderId === 0 || Number(orders[0]?.OrderID) === previousOrderId;
-  const nextOrder = orders[previousOrderId === 0 ? 0 : 1];
-  if (validStart && !nextOrder) return null;
-
-  if (validStart && nextOrder.OrderType === orderType && nextOrder.PaymentMethod === paymentMethod &&
-      nextOrder.DeliveryAddress === deliveryAddress) {
-    const rows = await runQuery(
-      'SELECT ItemID, QuantityOrdered FROM `Ordered Items` WHERE OrderID = ? ORDER BY ItemID',
-      [nextOrder.OrderID]
-    );
-    if (rows.length === items.length && rows.every((row, i) =>
-      Number(row.ItemID) === items[i].itemId && Number(row.QuantityOrdered) === items[i].quantity)) {
-      return { OrderID: nextOrder.OrderID, CustomerID: customerId, OrderTotal: nextOrder.OrderTotal,
-        orderType, deliveryAddress, paymentMethod };
-    }
-  }
-
-  const error = new Error('Another order was placed. Review your cart before ordering again.');
-  error.statusCode = 409;
-  error.code = 'ORDER_HISTORY_CHANGED';
-  throw error;
+// The Azure database clock is UTC, so orders save Houston time instead.
+function houstonNow() {
+  // sv-SE prints "YYYY-MM-DD HH:mm:ss", the format MySQL expects.
+  return new Date().toLocaleString('sv-SE', { timeZone: 'America/Chicago' });
 }
 
 async function createOrder({ employeeId, customerId, paymentMethod, items, orderType = 'In-Store',
-  previousOrderId, deliveryAddress = null, reconcileOnly = false }) {
+  deliveryAddress = null }) {
   const onlineOrder = orderType === 'Pickup' || orderType === 'Delivery';
   const connection = await getConnection();
   const runQuery = (sql, params = []) => new Promise((resolve, reject) => {
@@ -186,9 +157,9 @@ async function createOrder({ employeeId, customerId, paymentMethod, items, order
       connection.beginTransaction((error) => error ? reject(error) : resolve());
     });
 
-    // Lock the customer before checking for a receipt so two requests cannot buy the cart twice.
+    // Make sure the customer exists before saving the order.
     const customers = await runQuery(
-      'SELECT CustomerID FROM Customers WHERE CustomerID = ?' + (onlineOrder ? ' FOR UPDATE' : ''),
+      'SELECT CustomerID FROM Customers WHERE CustomerID = ?',
       [customerId]
     );
     if (customers.length === 0) {
@@ -198,21 +169,6 @@ async function createOrder({ employeeId, customerId, paymentMethod, items, order
     }
 
     const sortedItems = [...items].sort((left, right) => left.itemId - right.itemId);
-    if (onlineOrder) {
-      const receipt = await previousOnlineReceipt(runQuery, customerId, previousOrderId,
-        orderType, deliveryAddress, paymentMethod, sortedItems, reconcileOnly);
-      if (receipt) {
-        await connection.promise().commit();
-        return receipt;
-      }
-      if (reconcileOnly) {
-        const error = new Error('Your previous pickup order was not placed. Choose how to receive your order.');
-        error.statusCode = 409;
-        error.code = 'LEGACY_CHECKOUT_NOT_PLACED';
-        throw error;
-      }
-    }
-
     const employees = await runQuery('SELECT EmployeeID FROM Employees WHERE EmployeeID = ?', [employeeId]);
     if (employees.length === 0) {
       const error = new Error(onlineOrder ? 'Online checkout is unavailable. Please contact the store.' : 'Cashier employee ID was not found');
@@ -266,8 +222,10 @@ async function createOrder({ employeeId, customerId, paymentMethod, items, order
 
     const fields = { EmployeeID: employeeId, CustomerID: customerId, OrderType: orderType,
       OrderTotal: (totalInCents / 100).toFixed(2), PaymentMethod: paymentMethod };
-    if (onlineOrder) fields.DeliveryAddress = deliveryAddress;
-    const orderResult = await runQuery('INSERT INTO `Orders` SET ?, OrderDate = NOW()', [fields]);
+    // Only delivery orders save an address.
+    if (orderType === 'Delivery') fields.DeliveryAddress = deliveryAddress;
+    fields.OrderDate = houstonNow();
+    const orderResult = await runQuery('INSERT INTO `Orders` SET ?', [fields]);
 
     for (const item of orderItems) {
       const itemInventory = inventoryByItemId.get(item.itemId) ?? [];
@@ -340,6 +298,5 @@ module.exports = {
   remove,
   authenticateEmployee,
   adjustItemStock,
-  createOrder,
-  getLatestCustomerOrderId
+  createOrder
 }

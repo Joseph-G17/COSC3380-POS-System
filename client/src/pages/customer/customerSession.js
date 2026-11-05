@@ -8,10 +8,6 @@ function profileFields(customer) {
   if (!Number.isSafeInteger(id) || id <= 0) return null;
 
   const profile = { customerID: id, firstName: customer.firstName };
-  // The server signs this token at login. Checkout sends it back with the order.
-  if (typeof customer.checkoutToken === "string" || customer.checkoutToken === null) {
-    profile.checkoutToken = customer.checkoutToken;
-  }
   for (const field of ["lastName", "email", "username", "membershipExpirationDate"]) {
     if (typeof customer[field] === "string") profile[field] = customer[field];
   }
@@ -26,8 +22,9 @@ export function loadCustomer() {
   }
 }
 
-export function saveCustomer(customer, checkoutToken) {
-  const profile = profileFields({ ...customer, checkoutToken });
+// Checkout and order history send this saved customer ID to the server.
+export function saveCustomer(customer) {
+  const profile = profileFields(customer);
   if (!profile) return false;
   try {
     sessionStorage.setItem(customerKey, JSON.stringify(profile));

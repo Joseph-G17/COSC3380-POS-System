@@ -1,6 +1,6 @@
 import { Link, useOutletContext } from "react-router-dom";
 import { loadCustomer } from "../customer/customerSession";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 function money(cents) {
   return "$" + (cents / 100).toFixed(2);
@@ -21,67 +21,11 @@ function CheckoutPage() {
     refreshStock,
   } = useOutletContext();
   const customer = loadCustomer();
-  const token = customer?.checkoutToken;
-  const pendingKey = "saveso.pendingOrder." + customer?.customerID;
-  const [pending, setPending] = useState(() => {
-    try {
-      return JSON.parse(sessionStorage.getItem(pendingKey));
-    } catch {
-      return null;
-    }
-  });
-  const [orderType, setOrderType] = useState(pending?.orderType ?? "Pickup");
-  const [deliveryAddress, setDeliveryAddress] = useState(
-    pending?.deliveryAddress ?? "",
-  );
-  const earlierPickup = !!pending && pending.orderType == null;
-  const [previousOrderId, setPreviousOrderId] = useState(null);
+  const [orderType, setOrderType] = useState("Pickup");
+  const [deliveryAddress, setDeliveryAddress] = useState("");
   const [error, setError] = useState("");
-  const [loginExpired, setLoginExpired] = useState(false);
   const [sending, setSending] = useState(false);
   const [receipt, setReceipt] = useState(null);
-  const submitting = useRef(false);
-  const mounted = useRef(false);
-
-  useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-    };
-  }, []);
-
-  // Remember which order was the latest when this customer reviewed their cart.
-  // A retry uses its saved request even if that order has already been placed.
-  useEffect(() => {
-    if (!token || pending || receipt) return;
-    const controller = new AbortController();
-    async function loadCheckout() {
-      try {
-        const response = await fetch("/api/customer/checkout", {
-          headers: { Authorization: "Bearer " + token },
-          signal: controller.signal,
-          cache: "no-store",
-        });
-        if (response.status === 401) {
-          setLoginExpired(true);
-          return;
-        }
-        if (!response.ok) throw new Error();
-        const data = await response.json();
-        if (
-          !Number.isSafeInteger(data.previousOrderId) ||
-          data.previousOrderId < 0
-        )
-          throw new Error();
-        setPreviousOrderId(data.previousOrderId);
-      } catch {
-        if (!controller.signal.aborted)
-          setError("Couldn’t load checkout. Refresh the page to try again.");
-      }
-    }
-    loadCheckout();
-    return () => controller.abort();
-  }, [token, pending, receipt]);
 
   const currentProducts = new Map(
     (products ?? []).map((item) => [Number(item.ItemID), item]),
@@ -100,93 +44,49 @@ function CheckoutPage() {
       (item) => stockById.get(Number(item.ItemID)) >= item.quantity,
     );
 
+  // Send the customer ID, pickup or delivery, and the cart to the server.
+  // The server saves the order and sends back a receipt with the new OrderID.
   async function placeOrder(event) {
     event.preventDefault();
-    if (submitting.current || !token || loginExpired) return;
-    if (!pending && (!cartInStock || previousOrderId === null)) return;
-    if (!pending && orderType === "Delivery" && !deliveryAddress.trim()) {
+    if (sending || !customer || !cartInStock) return;
+    if (orderType === "Delivery" && !deliveryAddress.trim()) {
       setError("Enter your delivery address.");
       return;
     }
-    const order = pending ?? {
-      previousOrderId,
-      orderType,
-      paymentMethod: "Demo",
-      deliveryAddress: orderType === "Delivery" ? deliveryAddress.trim() : null,
-      items: cartItems.map((item) => ({
-        itemId: Number(item.ItemID),
-        quantity: item.quantity,
-      })),
-    };
-    try {
-      sessionStorage.setItem(pendingKey, JSON.stringify(order));
-    } catch {
-      setError("Allow site storage so we can keep track of your order.");
-      return;
+
+    const items = [];
+    for (const item of cartItems) {
+      items.push({ itemId: Number(item.ItemID), quantity: item.quantity });
     }
-    submitting.current = true;
-    setPending(order);
+    const order = {
+      customerId: customer.customerID,
+      orderType: orderType,
+      deliveryAddress: orderType === "Delivery" ? deliveryAddress.trim() : null,
+      items: items,
+    };
+
     setSending(true);
     setReceipt(null);
     setError("");
     try {
       const response = await fetch("/api/customer/orders", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer " + token,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(order),
       });
       const result = await response.json();
-      if (
-        !mounted.current ||
-        loadCustomer()?.customerID !== customer.customerID
-      )
-        return;
-      if (response.status === 401) {
-        setLoginExpired(true);
-        return;
-      }
       if (!response.ok) {
-        // The checkout API uses this code only when the order was not saved.
-        const checkoutUnavailable =
-          response.status === 503 && result.code === "CHECKOUT_UNAVAILABLE";
-        if (response.status >= 500 && !checkoutUnavailable) throw new Error();
-        sessionStorage.removeItem(pendingKey);
-        setPreviousOrderId(null);
-        setPending(null);
-        setError(
-          result.code === "ORDER_HISTORY_CHANGED"
-            ? "Your order history changed. Review your cart before placing a new order."
-            : result.message || "Review your cart and try again.",
-        );
+        // For example: not enough stock left. The cart stays so the customer can fix it.
+        setError(result.message || "We couldn’t place your order. Please try again.");
         refreshStock();
         return;
       }
-      if (
-        !Number.isSafeInteger(result.OrderID) ||
-        result.OrderID < 1 ||
-        result.OrderTotal == null ||
-        !Number.isFinite(Number(result.OrderTotal)) ||
-        result.paymentMethod !== order.paymentMethod ||
-        result.orderType !== (order.orderType ?? "Pickup") ||
-        (order.orderType === "Delivery" &&
-          result.deliveryAddress !== order.deliveryAddress)
-      )
-        throw new Error();
-      sessionStorage.removeItem(pendingKey);
       setReceipt(result);
-      setPreviousOrderId(result.OrderID);
       removePurchasedItems(order.items);
-      setPending(null);
       refreshStock();
     } catch {
-      setError(
-        "We couldn’t confirm your order. Use the button below to retry the same order.",
-      );
+      setError("We couldn’t reach the store. Check your connection and try again.");
     } finally {
-      submitting.current = false;
       setSending(false);
     }
   }
@@ -270,18 +170,14 @@ function CheckoutPage() {
         >
           <h2 className="text-xl text-wrap!">Order #{receipt.OrderID} confirmed</h2>
           <p>
-            {receipt.paymentMethod === "Demo"
-              ? "Paid in demo"
-              : "Pay at pickup"}{" "}
-            · {money(Math.round(Number(receipt.OrderTotal) * 100))}
+            Paid with demo card ·{" "}
+            {money(Math.round(Number(receipt.OrderTotal) * 100))}
           </p>
-          {receipt.paymentMethod === "Demo" && (
-            <p className="mt-1 text-wrap! wrap-anywhere">
-              {receipt.orderType === "Delivery"
-                ? "Delivery to " + receipt.deliveryAddress
-                : "Pickup at the store."}
-            </p>
-          )}
+          <p className="mt-1 text-wrap! wrap-anywhere">
+            {receipt.orderType === "Delivery"
+              ? "Delivery to " + receipt.deliveryAddress
+              : "Pickup at the store."}
+          </p>
           <Link
             to="/customer/profile"
             className="mt-2 inline-block text-green-900 underline"
@@ -290,7 +186,7 @@ function CheckoutPage() {
           </Link>
         </section>
       )}
-      {cartItems.length === 0 && !pending ? (
+      {cartItems.length === 0 ? (
         !receipt && (
           <p className="mt-4 text-wrap!">
             Your cart is empty. Add an item from the shop to get started.
@@ -305,37 +201,23 @@ function CheckoutPage() {
             <h2 id="cart-heading" className="text-xl">
               Your items
             </h2>
-            {pending ? (
-              <ul className="mt-2 space-y-2">
-                {pending.items.map((item) => (
-                  <li key={item.itemId} className="text-wrap! wrap-anywhere">
-                    {currentProducts.get(item.itemId)?.ItemName ??
-                      "Item #" + item.itemId}{" "}
-                    × {item.quantity}
-                  </li>
-                ))}
-              </ul>
+            {productsError ? (
+              <p
+                role="status"
+                className="mt-2 text-sm text-amber-800 text-wrap!"
+              >
+                Couldn't check stock. Refresh the page to try again.
+              </p>
             ) : (
-              <>
-                {productsError ? (
-                  <p
-                    role="status"
-                    className="mt-2 text-sm text-amber-800 text-wrap!"
-                  >
-                    Couldn't check stock. Refresh the page to try again.
-                  </p>
-                ) : (
-                  products === null && (
-                    <p role="status" className="mt-2 text-sm">
-                      Checking stock…
-                    </p>
-                  )
-                )}
-                <ul className="divide-y divide-gray-200">
-                  {cartItems.map(renderItem)}
-                </ul>
-              </>
+              products === null && (
+                <p role="status" className="mt-2 text-sm">
+                  Checking stock…
+                </p>
+              )
             )}
+            <ul className="divide-y divide-gray-200">
+              {cartItems.map(renderItem)}
+            </ul>
           </section>
           <section
             aria-labelledby="summary-heading"
@@ -345,20 +227,16 @@ function CheckoutPage() {
             <h2 id="summary-heading" className="text-xl">
               Order summary
             </h2>
-            {!pending && (
-              <>
-                <p className="my-3" aria-live="polite">
-                  {totalQuantity} {totalQuantity === 1 ? "item" : "items"}
-                </p>
-                <div
-                  className="flex flex-wrap justify-between gap-2 border-t py-3 font-semibold"
-                  aria-live="polite"
-                >
-                  <span>Estimated total</span>
-                  <span>{money(totalCents)}</span>
-                </div>
-              </>
-            )}
+            <p className="my-3" aria-live="polite">
+              {totalQuantity} {totalQuantity === 1 ? "item" : "items"}
+            </p>
+            <div
+              className="flex flex-wrap justify-between gap-2 border-t py-3 font-semibold"
+              aria-live="polite"
+            >
+              <span>Estimated total</span>
+              <span>{money(totalCents)}</span>
+            </div>
             {!customer && (
               <p className="text-wrap!">
                 <Link to="/customer/login?next=/checkout" className="underline">
@@ -374,100 +252,64 @@ function CheckoutPage() {
                 to use your customer account.
               </p>
             )}
-            {customer &&
-              (token && !loginExpired ? (
-                <form className="mt-4 space-y-4" onSubmit={placeOrder}>
-                  {!earlierPickup && (
-                    <>
-                      <fieldset className="min-w-0" disabled={!!pending}>
-                        <legend className="mb-2 max-w-full font-medium text-wrap!">
-                          How would you like to get your order?
-                        </legend>
-                        <div className="flex flex-wrap gap-4">
-                          {["Pickup", "Delivery"].map((method) => (
-                            <label
-                              key={method}
-                              className="flex min-h-11 items-center gap-2"
-                            >
-                              <input
-                                type="radio"
-                                name="orderType"
-                                value={method}
-                                checked={orderType === method}
-                                onChange={() => setOrderType(method)}
-                              />
-                              {method}
-                            </label>
-                          ))}
-                        </div>
-                        {orderType === "Delivery" && (
-                          <label className="mt-3 block">
-                            Delivery address
-                            <input
-                              type="text"
-                              required
-                              maxLength={255}
-                              value={deliveryAddress}
-                              autoComplete="off"
-                              placeholder="Street address, city, state and ZIP"
-                              onChange={(event) =>
-                                setDeliveryAddress(event.target.value)
-                              }
-                              className="mt-1 block min-h-11 w-full rounded border px-3 py-2"
-                            />
-                          </label>
-                        )}
-                      </fieldset>
-                      <p className="text-sm text-gray-700 text-wrap!">
-                        This is a demo payment. You won’t be charged.
-                      </p>
-                    </>
+            {customer && (
+              <form className="mt-4 space-y-4" onSubmit={placeOrder}>
+                <fieldset className="min-w-0" disabled={sending}>
+                  <legend className="mb-2 max-w-full font-medium text-wrap!">
+                    How would you like to get your order?
+                  </legend>
+                  <div className="flex flex-wrap gap-4">
+                    {["Pickup", "Delivery"].map((method) => (
+                      <label
+                        key={method}
+                        className="flex min-h-11 items-center gap-2"
+                      >
+                        <input
+                          type="radio"
+                          name="orderType"
+                          value={method}
+                          checked={orderType === method}
+                          onChange={() => setOrderType(method)}
+                        />
+                        {method}
+                      </label>
+                    ))}
+                  </div>
+                  {orderType === "Delivery" && (
+                    <label className="mt-3 block">
+                      Delivery address
+                      <input
+                        type="text"
+                        required
+                        maxLength={255}
+                        value={deliveryAddress}
+                        autoComplete="off"
+                        placeholder="Street address, city, state and ZIP"
+                        onChange={(event) =>
+                          setDeliveryAddress(event.target.value)
+                        }
+                        className="mt-1 block min-h-11 w-full rounded border px-3 py-2"
+                      />
+                    </label>
                   )}
-                  {error && (
-                    <p role="alert" className="text-red-800 text-wrap!">
-                      {error}
-                    </p>
-                  )}
-                  {pending && !sending && (
-                    <p className="text-sm text-wrap!">
-                      {earlierPickup
-                        ? "Check whether your earlier pay-at-pickup order was saved."
-                        : "We'll check the order you already submitted."}
-                    </p>
-                  )}
-                  <button
-                    type="submit"
-                    disabled={
-                      sending ||
-                      (!pending && (previousOrderId === null || !cartInStock))
-                    }
-                    className="block min-h-11 w-full rounded bg-green-800 px-4 py-2 text-white text-wrap! disabled:opacity-50"
-                  >
-                    {earlierPickup
-                      ? "Check previous order"
-                      : sending
-                        ? "Confirming…"
-                        : pending
-                          ? "Retry previous order"
-                          : "Pay & place demo order"}
-                  </button>
-                </form>
-              ) : token === null ? (
-                <p className="mt-4 text-wrap!">
-                  Online checkout is temporarily unavailable. Your cart is
-                  saved.
+                </fieldset>
+                <p className="text-sm text-gray-700 text-wrap!">
+                  This is a demo payment. You won’t be charged.
                 </p>
-              ) : (
-                <p className="mt-4 text-wrap!">
-                  <Link
-                    className="underline"
-                    to="/customer/login?next=/checkout"
-                  >
-                    Log in again
-                  </Link>{" "}
-                  to place your order.
-                </p>
-              ))}
+                {error && (
+                  <p role="alert" className="text-red-800 text-wrap!">
+                    {error}
+                  </p>
+                )}
+                <button
+                  type="submit"
+                  disabled={sending || !cartInStock}
+                  className="block min-h-11 w-full rounded bg-green-800 px-4 py-2 text-white text-wrap! disabled:opacity-50"
+                >
+                  {sending ? "Placing order…" : "Pay & place demo order"}
+                </button>
+              </form>
+            )}
           </section>
         </div>
       )}
