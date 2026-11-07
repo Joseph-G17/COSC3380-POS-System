@@ -2,6 +2,17 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom"
 
 const NavBar = ({ employee }) => {
+
+  function logoutPopUp() {
+    const confirmLogout = window.confirm('Would you like to log out?');
+    
+    if(!confirmLogout)
+      return;
+      
+    sessionStorage.removeItem("saveso-employee");
+    sessionStorage.removeItem("saveso-timestamp")
+  }
+
   const navigate = useNavigate();
   //when not set employee == null automatically
 
