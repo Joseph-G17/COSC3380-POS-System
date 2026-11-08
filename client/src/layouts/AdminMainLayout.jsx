@@ -8,7 +8,7 @@ const checkSessionEmployee = () => {
     const user = JSON.parse(sessionStorage.getItem('saveso-employee'));
 
     if(user && user.id && typeof user.firstName == 'string'){
-      return { id: user.id, firstName: user.firstName, clockedIn: user.clockedIn}
+      return { id: user.id, firstName: user.firstName, clockedIn: user.clockedIn, department: user.department}
     }
   } catch(error){
     console.log(error);

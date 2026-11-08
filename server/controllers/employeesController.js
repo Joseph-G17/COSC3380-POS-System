@@ -19,7 +19,7 @@ async function getEmployeeLogin(req, res){
   }
   else {
     res.writeHead(200, {'Content-Type': 'application/json'});
-    res.end(JSON.stringify({employeeID: login.employeeID, firstName: login.firstName, Role: login.Role}));
+    res.end(JSON.stringify({employeeID: login.employeeID, firstName: login.firstName, Role: login.Role, departmentID: login.departmentID}));
   }
 }
 

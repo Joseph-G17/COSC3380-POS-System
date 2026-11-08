@@ -26,7 +26,7 @@ const DataSnippets = ({ entity, idField, refresh}) => {
     loadData();
   },[entity, refresh]);
 
-  const headers = rows.length > 0 ? Object.keys(rows[0]) : [];
+  const headers = rows.length > 0 ? Object.keys(rows[0]).filter((h) => h !== idField) : [];
   while (headers.length > 7){
     headers.pop();
   }
@@ -37,7 +37,7 @@ const DataSnippets = ({ entity, idField, refresh}) => {
       style={{ gridTemplateColumns: `repeat(${headers.length || 1}, minmax(0, 1fr))` }}>
         {headers.map((h) => (
           <h2 className="border-b" key={h}> 
-            {h}
+            {h.replace(/([a-z])([A-Z])/g, '$1 $2')}
           </h2>
         ))}
       </div>
