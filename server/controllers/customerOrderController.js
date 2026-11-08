@@ -58,6 +58,18 @@ async function placeOnlineOrder(req, res) {
       }
     }
 
+    // The discount code is optional. An empty box counts as no code.
+    // Check the length here too, because a request can skip the checkout page.
+    let discountCode = null;
+    if (typeof body.discountCode === 'string') {
+      discountCode = body.discountCode.trim();
+      if (discountCode === '') {
+        discountCode = null;
+      } else if (discountCode.length > 20) {
+        return sendJson(res, 400, { message: 'Discount code must be 20 characters or less.' });
+      }
+    }
+
     if (!Array.isArray(items) || items.length === 0) {
       return sendJson(res, 400, { message: 'Your cart is empty.' });
     }
@@ -76,6 +88,7 @@ async function placeOnlineOrder(req, res) {
       deliveryAddress: deliveryAddress,
       paymentMethod: 'Card',
       items: items,
+      discountCode: discountCode,
     });
     return sendJson(res, 201, receipt);
   } catch (error) {

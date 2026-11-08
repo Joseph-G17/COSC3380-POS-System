@@ -23,6 +23,8 @@ function CheckoutPage() {
   const customer = loadCustomer();
   const [orderType, setOrderType] = useState("Pickup");
   const [deliveryAddress, setDeliveryAddress] = useState("");
+  // What the customer types in the discount code box. Empty means no code.
+  const [discountCode, setDiscountCode] = useState("");
   const [error, setError] = useState("");
   const [sending, setSending] = useState(false);
   const [receipt, setReceipt] = useState(null);
@@ -63,6 +65,8 @@ function CheckoutPage() {
       orderType: orderType,
       deliveryAddress: orderType === "Delivery" ? deliveryAddress.trim() : null,
       items: items,
+      // Send null when the box is empty, so the server knows there is no code.
+      discountCode: discountCode.trim() === "" ? null : discountCode.trim(),
     };
 
     setSending(true);
@@ -292,6 +296,17 @@ function CheckoutPage() {
                       />
                     </label>
                   )}
+                  {/* Optional code box. The server checks the code when the order is placed. */}
+                  <label className="mt-3 block">
+                    Discount code
+                    <input
+                      type="text"
+                      maxLength={20}
+                      value={discountCode}
+                      onChange={(event) => setDiscountCode(event.target.value)}
+                      className="mt-1 block min-h-11 w-full rounded border px-3 py-2"
+                    />
+                  </label>
                 </fieldset>
                 <p className="text-sm text-gray-700 text-wrap!">
                   This is a demo payment. You won’t be charged.
