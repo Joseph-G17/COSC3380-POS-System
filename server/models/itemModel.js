@@ -208,15 +208,15 @@ async function createOrder({ employeeId, customerId, paymentMethod, items, order
       throw error;
     }
 
-    // Welcome discount: each customer can use a code only once.
-    // Find the code first, then look for it in this customer's past orders.
+    //Welcome discount: each customer can use a code only once
+    //Find the code first, then look for it in this customer's past orders
     let discountId = null;
-    if (discountCode !== null) {
+    if(discountCode !== null){
       const discounts = await runQuery(
         'SELECT DiscountID, DiscountPercent FROM Discounts WHERE DiscountCode = ?',
         [discountCode]
       );
-      if (discounts.length === 0) {
+      if(discounts.length === 0){
         const error = new Error('The discount code is invalid');
         error.statusCode = 400;
         throw error;
@@ -226,13 +226,14 @@ async function createOrder({ employeeId, customerId, paymentMethod, items, order
         'SELECT OrderID FROM Orders WHERE CustomerID = ? AND DiscountID = ?',
         [customerId, discountId]
       );
-      if (usedOrders.length > 0) {
-        const error = new Error('The discount code has already been used by this customer');
+      if(usedOrders.length > 0){
+        const error = new Error('You have used this code before');
         error.statusCode = 409;
         throw error;
       }
 
-      // Take the percent off the whole order. Money stays in cents to avoid decimal errors.
+      //Take the percent off the whole order
+      //Money stays in cents to avoid decimal errors
       totalInCents = Math.round(totalInCents * (100 - discounts[0].DiscountPercent) / 100);
     }
 
@@ -252,8 +253,10 @@ async function createOrder({ employeeId, customerId, paymentMethod, items, order
       OrderTotal: (totalInCents / 100).toFixed(2), PaymentMethod: paymentMethod };
     // Only delivery orders save an address.
     if (orderType === 'Delivery') fields.DeliveryAddress = deliveryAddress;
-    // Save the code on the order, so the next order knows it was used.
-    if (discountId !== null) fields.DiscountID = discountId;
+    //Save the code on the order, so the next order knows it was used
+    if(discountId !== null){
+      fields.DiscountID = discountId;
+    }
     fields.OrderDate = houstonNow();
     const orderResult = await runQuery('INSERT INTO `Orders` SET ?', [fields]);
 
