@@ -6,7 +6,7 @@ import CustomerLoginPage from './pages/customer/CustomerLoginPage';
 import CustomerSignupPage from './pages/customer/CustomerSignupPage';
 import CustomerProfilePage from './pages/customer/CustomerProfilePage';
 
-import AdminMainLayout from './layouts/AdminMainLayout';
+import AdminLayout from './layouts/AdminLayout';
 import HomePage from './pages/admin/HomePage';
 import ReportsPage from './pages/admin/ReportsPage';
 import ClockInPage from './pages/admin/ClockInPage';
@@ -48,7 +48,7 @@ const App = () => {
         <Route path='/login' element={<LoginLayout />} />
 
         {/* Preserve the existing admin layout and its default page. */}
-        <Route path='/admin' element={<AdminMainLayout /> }>
+        <Route path='/admin' element={<AdminLayout /> }>
           <Route index element={<Navigate to="manage/Employees" replace />} />
           <Route path='inspectData/:entity/:id' element={<InspectDataPage />}/>
           <Route path='manage/:entity' element={<HomePage /> } />

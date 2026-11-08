@@ -1,10 +1,13 @@
-import {useEffect, useState} from 'react'
+import {useEffect, useState} from 'react';
+import { useOutletContext } from 'react-router-dom';
 import DataSnippet from './DataSnippet';
 
 const DataSnippets = ({ entity, idField, refresh}) => {
   //let cols will be the main attributes of that entity
   const [rows, setRows] = useState([]);
   const [loading, isLoading] = useState(true);
+  const { employee } = useOutletContext();
+
 
   useEffect(() => {
     const loadData = async () => {
@@ -33,6 +36,9 @@ const DataSnippets = ({ entity, idField, refresh}) => {
 
   return (
     <main className=''>
+      <div className="pb-4 pl-4 text-sm text-gray-500" >
+        Total Rows: {rows.length}
+      </div>
       <div className='grid' 
       style={{ gridTemplateColumns: `repeat(${headers.length || 1}, minmax(0, 1fr))` }}>
         {headers.map((h) => (
@@ -45,9 +51,6 @@ const DataSnippets = ({ entity, idField, refresh}) => {
         {rows.map((row) => 
           <DataSnippet key={row[idField]} entity={entity} idField={idField} row={row} headers={headers}/>
         )}
-      </div>
-      <div className="" >
-      
       </div>
     </main>
   )

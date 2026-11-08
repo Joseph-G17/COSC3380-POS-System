@@ -4,7 +4,9 @@ const SideBar = () => {
   const navigate = useNavigate();
 
   const entities = ['Employees', 'Orders', 'Items', 'Item Categories', 'Discounts', 'Sales', 'Departments', 'Returns', 'Inventory', 'Customers'];
-  const reports = ['SalesSummary', 'EmployeeSales','StockReport', 'ItemPerformance'];
+  const reports = ['SalesSummary', 'ItemPerformance', 'CustomerReport'];
+  //what the user sees instead of the view name
+  const reportNames = { SalesSummary: 'Revenue', ItemPerformance: 'Item Sales', CustomerReport: 'Customer' };
 
   return (
     <aside className='row-span-2 border h-screen overflow-y-auto'>
@@ -30,7 +32,7 @@ const SideBar = () => {
             key={report}
             to={`/admin/reports/${report}`}
           >
-            Manage {report}
+            {reportNames[report]} Report
           </NavLink>
         )}  
       </div>

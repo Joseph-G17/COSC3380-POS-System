@@ -4,7 +4,9 @@ const SideBar = () => {
   const navigate = useNavigate();
   //WORK ON COMBINING ITEMS AND ITEM CATEGORIES AND EMPLOYEES + EMPLOYEE HOURS
   const entities = ['Employees', 'Orders', 'Items', 'Item Categories', 'Discounts', 'Sales', 'Returns', 'Inventory', 'Customers'];
-  const reports = ['SalesSummary', 'EmployeeSales','StockReport', 'ItemPerformance']; //EMPLOYEE SPECIFIC REPORTS + DEPARTMENT WIDE REPORT
+  const reports = ['EmployeeSales', 'EmployeeProductivity']; //EMPLOYEE SPECIFIC REPORTS + DEPARTMENT WIDE REPORT
+  //what the user sees instead of the view name
+  const reportNames = { EmployeeSales: 'Employee Sales', EmployeeProductivity: 'Employee Productivity' };
 
   return (
     <aside className='row-span-2 border h-screen overflow-y-auto'>
@@ -30,7 +32,7 @@ const SideBar = () => {
             key={report}
             to={`/manager/reports/${report}`}
           >
-            Manage {report}
+            {reportNames[report]} Report
           </NavLink>
         )}  
       </div>
