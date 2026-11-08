@@ -14,6 +14,20 @@
       "database": "mydb",
       "username": "root",
       "askForPassword": true
+    },
+    {
+      "mysqlOptions": {
+        "authProtocol": "default",
+        "enableSsl": "Disabled"
+      },
+      "ssh": "Disabled",
+      "previewLimit": 50,
+      "server": "saveso.mysql.database.azure.com",
+      "port": 3306,
+      "driver": "MySQL",
+      "name": "saveso",
+      "username": "POS_System",
+      "database": "saveso"
     }
   ]
 }

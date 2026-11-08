@@ -15,7 +15,7 @@ const [employeeInfo, setEmployeeInfo] = useState(() => {
 */
 
 const storeEmployeeLogin = (user) => {
-  sessionStorage.setItem('saveso-employee', JSON.stringify({id: user.employeeID, firstName: user.firstName, clockedIn: false}));
+  sessionStorage.setItem('saveso-employee', JSON.stringify({id: user.employeeID, firstName: user.firstName, clockedIn: false, department: user.departmentID}));
 }
 
 const LoginLayout = () => { 
@@ -33,13 +33,16 @@ const LoginLayout = () => {
 
       if (user.Role == 0){ 
         storeEmployeeLogin(user);
-        navigate("/admin");
+        navigate("/cashier");
       }
       else if (user.Role == 1) {
         storeEmployeeLogin(user);
-        navigate("/cashier");
+        navigate("/manager");
       }
-      else navigate("/");
+      else if (user.Role == 2){
+        storeEmployeeLogin(user);
+        navigate("/admin");
+      }
     } catch (error) {
       console.log(error);
     }
