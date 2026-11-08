@@ -10,29 +10,12 @@ const FILTERS = {
     { name: 'paymentMethod', label: 'Payment', type: 'select', column: 'PaymentMethod' },
     { name: 'minSales', label: 'Min Total Sales ($)', type: 'number', placeholder: 'e.g. 10' }
   ],
-  StockReport: [
-    { name: 'itemName', label: 'Item', type: 'text', column: 'ItemName', placeholder: 'e.g. Milk' },
-    { name: 'category', label: 'Category', type: 'select', column: 'Category' },
-    { name: 'supplier', label: 'Supplier', type: 'select', column: 'Supplier' },
-    { name: 'status', label: 'Stock Status', type: 'select', column: 'StockStatus' },
-    { name: 'maxStock', label: 'Stock At Most', type: 'number', placeholder: 'e.g. 10' }
-  ],
   EmployeeSales: [
     { name: 'employee', label: 'Employee', type: 'text', column: 'EmployeeName', placeholder: 'e.g. Sam' },
     { name: 'department', label: 'Department', type: 'select', column: 'Department' },
     { name: 'from', label: 'From month', type: 'month' },
     { name: 'to', label: 'To month', type: 'month' },
     { name: 'minSales', label: 'Min Total Sales ($)', type: 'number', placeholder: 'e.g. 10' }
-  ],
-  CustomerPurchases: [
-    { name: 'customer', label: 'Customer', type: 'text', column: 'CustomerName', placeholder: 'e.g. Maya' },
-    { name: 'channel', label: 'Channel', type: 'select', column: 'Channel' },
-    { name: 'orderType', label: 'Order Type', type: 'select', column: 'OrderType' },
-    { name: 'paymentMethod', label: 'Payment', type: 'select', column: 'PaymentMethod' },
-    { name: 'category', label: 'Category', type: 'select', column: 'Category' },
-    { name: 'itemName', label: 'Item', type: 'text', column: 'ItemName', placeholder: 'e.g. Apples' },
-    { name: 'from', label: 'From date', type: 'date' },
-    { name: 'to', label: 'To date', type: 'date' }
   ],
   ItemPerformance: [
     { name: 'itemName', label: 'Item', type: 'text', column: 'ItemName', placeholder: 'e.g. Milk' },
@@ -41,9 +24,38 @@ const FILTERS = {
     { name: 'maxSold', label: 'Units Sold At Most', type: 'number', placeholder: 'e.g. 2' },
     { name: 'minReturned', label: 'Units Returned At Least', type: 'number', placeholder: 'e.g. 1' }
   ],
+  CustomerReport: [
+    { name: 'customer', label: 'Customer', type: 'text', column: 'CustomerName', placeholder: 'e.g. Maya' },
+    { name: 'membership', label: 'Membership', type: 'select', column: 'Membership' },
+    { name: 'minSpent', label: 'Min Total Spent ($)', type: 'number', placeholder: 'e.g. 50' },
+    { name: 'from', label: 'Last order from', type: 'date' },
+    { name: 'to', label: 'Last order to', type: 'date' }
+  ],
+  EmployeeProductivity: [
+    { name: 'employee', label: 'Employee', type: 'text', column: 'EmployeeName', placeholder: 'e.g. Sam' },
+    { name: 'department', label: 'Department', type: 'select', column: 'Department' },
+    { name: 'minHours', label: 'Hours Worked At Least', type: 'number', placeholder: 'e.g. 10' },
+    { name: 'minPerHour', label: 'Min Sales Per Hour ($)', type: 'number', placeholder: 'e.g. 20' }
+  ],
 };
 
+//columns that should show as $12.50
+const MONEY_COLUMNS = ['TotalSales', 'AvgOrder', 'Revenue', 'ItemPrice', 'TotalReturned', 'TotalSpent', 'SalesPerHour'];
+
+//"TotalSales" -> "Total Sales"
+const niceHeader = (header) => header.replace(/([a-z])([A-Z])/g, '$1 $2');
+
+const showMoney = (value) => '$' + Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+const showValue = (header, value) => {
+  if (value === null || value === undefined) return '';
+  if (MONEY_COLUMNS.includes(header)) return showMoney(value);
+  if (header.includes('Date')) return String(value).slice(0, 10); //2026-10-01T05:00:00.000Z -> 2026-10-01
+  return String(value);
+}
+
 const ReportsPage = () => {
+  
   const {report} =  useParams();
   const [rows, setRows] = useState([]); //rows that match filters
   const [allRows, setAllRows] = useState([]); //thw whole report
@@ -51,6 +63,9 @@ const ReportsPage = () => {
    const [applied, setApplied] = useState(0);  //how many filters the last apply used
   const [message, setMessage] = useState('');
   const [loaded, setLoaded] = useState(false);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [summary, setSummary] = useState([]);
 
   const loadData = async (currentFilters) => {
     try{
@@ -74,14 +89,18 @@ const ReportsPage = () => {
       const data = await response.json();
       if (!response.ok) throw new Error(data.message);
 
-      setRows(data);
-      if (count === 0) setAllRows(data); //no filters = the whole report
+      setRows(data.rows);
+      if (count === 0) setAllRows(data.rows); //no filters = the whole report
+      setTitle(data.title);
+      setDescription(data.description);
+      setSummary(data.summary);
       setApplied(count);
       setMessage('');
       setLoaded(true);
     } catch(error){
       console.log(error);
       setRows([]);
+      setSummary([]);
       setMessage(error.message);
     }
   }
@@ -90,6 +109,9 @@ const ReportsPage = () => {
     setFilters({});
     setRows([]);
     setAllRows([]);
+    setSummary([]);
+    setTitle('');
+    setDescription('');
     setApplied(0);
     setLoaded(false);
     loadData({});
@@ -128,10 +150,22 @@ const ReportsPage = () => {
   if (!message && !loaded) status = 'Loading...';
 
   return (
-    <section className='border-b border-r'>
-      <TitleHeader report={report}/>
+    <section className='report-page border-b border-r'>
+      <TitleHeader report={title || niceHeader(report)}/>
+      <p className='px-10 -mt-6'>{description}</p>
+      <p className='px-10 text-sm text-gray-500'>Generated {new Date().toLocaleString()}</p>
 
+      {/*summary boxes, they change with the filters*/}
       <div className='flex flex-wrap gap-4 p-4'>
+        {summary.map((s) => (
+          <div key={s.label} className='border-2 p-4 min-w-40'>
+            <p className='text-sm text-gray-500'>{s.label}</p>
+            <p className='text-2xl'>{s.money ? showMoney(s.value) : s.value.toLocaleString()}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className='no-print flex flex-wrap gap-4 p-4'>
         {(FILTERS[report] || []).map((filter) => {
           const counts = filter.column ? getCounts(filter.column) : {};
 
@@ -182,6 +216,11 @@ const ReportsPage = () => {
         >
           Reset
         </button>
+        <button className='button-highlight p-1 border-2 self-end'
+          onClick={() => window.print()}
+        >
+          Print
+        </button>
       </div>
 
       {status &&
@@ -193,7 +232,7 @@ const ReportsPage = () => {
       <div className='grid'
         style={{ gridTemplateColumns: `repeat(${headers.length || 1}, minmax(0, 1fr))` }}>
         {headers.map((h) => (
-          <h2 className='border-b' key={h}> {h} </h2>
+          <h2 className='border-b font-bold' key={h}> {niceHeader(h)} </h2>
         ))}
       </div>
 
@@ -202,7 +241,7 @@ const ReportsPage = () => {
           <div key={i} className='grid border-b'
             style={{ gridTemplateColumns: `repeat(${headers.length || 1}, minmax(0, 1fr))` }}>
             {headers.map((h) => (
-              <p key={h}>{String(row[h] ?? '')}</p>
+              <p key={h}>{showValue(h, row[h])}</p>
             ))}
           </div>
         ))}
