@@ -32,7 +32,7 @@ const Sidebar = ({
         }
         inert={!sidebarOpen}
       >
-        <aside className="max-h-[50dvh] w-full overflow-y-auto overscroll-contain border-y p-4 md:max-h-none md:w-56 md:overflow-visible md:border-y-0 md:border-r" aria-label="Product categories">
+        <aside className="max-h-[50dvh] w-full overflow-y-auto overscroll-contain border-y p-4 md:max-h-[80dvh] md:w-56 md:overflow-y-auto md:border-y-0 md:border-r" aria-label="Product categories">
           <fieldset className="min-w-0">
             {/* Allow long category names to wrap despite the global no-wrap rule. */}
             <legend className="font-medium" style={{ textWrap: "wrap", overflowWrap: "anywhere" }}>
