@@ -15,12 +15,13 @@ const {
   loginCustomer,
 } = require('./controllers/customerController');
 
-const { getOrderHistory, placeOnlineOrder } = require('./controllers/customerOrderController');
+const { getOrderHistory, placeOnlineOrder, checkDiscount } = require('./controllers/customerOrderController');
 
 const customerRoutes = {
   '/api/customer/signup': { POST: signupCustomer },
   '/api/customer/login': { POST: loginCustomer },
   '/api/customer/orders': { GET: getOrderHistory, POST: placeOnlineOrder },
+  '/api/customer/discount': { GET: checkDiscount },
 };
 
 const handler = (req, res) => {

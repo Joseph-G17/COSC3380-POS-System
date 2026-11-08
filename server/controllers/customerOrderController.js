@@ -1,5 +1,5 @@
 const { createOrder } = require('../models/itemModel');
-const { getCustomerOrderHistory } = require('../models/customerModel');
+const { getCustomerOrderHistory, checkDiscountCode } = require('../models/customerModel');
 const { readJsonBody, sendJson } = require('./customerController');
 
 // The team assigned employee 1 to online orders.
@@ -31,6 +31,31 @@ async function getOrderHistory(req, res) {
   }
 }
 
+// GET /api/customer/discount?customerId=5&code=WELCOMETOSAVESO
+//The checkout page asks if this customer can use the code before the order is placed
+async function checkDiscount(req, res){
+  try{
+    const url = new URL(req.url, 'http://localhost');
+    const customerId = readCustomerId(url.searchParams.get('customerId'));
+    if(customerId === null){
+      return sendJson(res, 400, { message: 'Log in to check your discount code.' });
+    }
+    const code = url.searchParams.get('code');
+    if(typeof code !== 'string' || code.trim() === '' || code.length > 20){
+      return sendJson(res, 400, { message: 'Enter a discount code of up to 20 characters.' });
+    }
+    const discount = await checkDiscountCode(customerId, code);
+    return sendJson(res, 200, discount);
+  }catch(error){
+    const status = error.statusCode || error.status || 500;
+    if(status < 500){
+      return sendJson(res, status, { message: error.message });
+    }
+    console.error('Discount check failed:', error.code || error.name);
+    return sendJson(res, 500, { message: 'Unable to check your discount code right now. Please try again.' });
+  }
+}
+
 // POST /api/customer/orders
 // The checkout page sends the customer ID, pickup or delivery, and the cart items.
 async function placeOnlineOrder(req, res) {
@@ -58,6 +83,18 @@ async function placeOnlineOrder(req, res) {
       }
     }
 
+    //The discount code is optional, an empty box means no code
+    //Check the length here too, because a request can skip the checkout page
+    let discountCode = null;
+    if(typeof body.discountCode === 'string'){
+      discountCode = body.discountCode.trim();
+      if(discountCode === ''){
+        discountCode = null;
+      }else if(discountCode.length > 20){
+        return sendJson(res, 400, { message: 'Discount code must be 20 characters or less.' });
+      }
+    }
+
     if (!Array.isArray(items) || items.length === 0) {
       return sendJson(res, 400, { message: 'Your cart is empty.' });
     }
@@ -76,6 +113,7 @@ async function placeOnlineOrder(req, res) {
       deliveryAddress: deliveryAddress,
       paymentMethod: 'Card',
       items: items,
+      discountCode: discountCode,
     });
     return sendJson(res, 201, receipt);
   } catch (error) {
@@ -89,4 +127,4 @@ async function placeOnlineOrder(req, res) {
   }
 }
 
-module.exports = { getOrderHistory, placeOnlineOrder };
+module.exports = { getOrderHistory, placeOnlineOrder, checkDiscount };

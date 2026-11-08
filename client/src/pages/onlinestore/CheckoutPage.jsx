@@ -23,6 +23,10 @@ function CheckoutPage() {
   const customer = loadCustomer();
   const [orderType, setOrderType] = useState("Pickup");
   const [deliveryAddress, setDeliveryAddress] = useState("");
+  //What the customer types in the discount code box
+  //Empty means no code
+  const [discountCode, setDiscountCode] = useState("");
+  const [appliedDiscount, setAppliedDiscount] = useState(null);
   const [error, setError] = useState("");
   const [sending, setSending] = useState(false);
   const [receipt, setReceipt] = useState(null);
@@ -38,11 +42,44 @@ function CheckoutPage() {
   const totalCents = cartItems.reduce((sum, item) => {
     return sum + unitPriceCents(item) * item.quantity;
   }, 0);
+
+  //Total after the discount, kept in cents like the server
+  let finalCents = totalCents;
+  if(appliedDiscount !== null){
+    finalCents = Math.round(totalCents * (100 - appliedDiscount.discountPercent) / 100);
+  }
+
   const cartInStock =
     cartItems.length > 0 &&
     cartItems.every(
       (item) => stockById.get(Number(item.ItemID)) >= item.quantity,
     );
+
+  //Ask the server if this customer can use the code, and show the new total
+  async function applyDiscount(){
+    if(!customer || !discountCode.trim()){
+      return;
+    }
+    setError("");
+    try{
+      const response = await fetch("/api/customer/discount?customerId=" + customer.customerID + "&code=" + encodeURIComponent(discountCode.trim()));
+      const result = await response.json();
+      if(!response.ok){
+        setAppliedDiscount(null);
+        setError(result.message);
+        return;
+      }else{
+        setAppliedDiscount(result);
+      }
+    }catch{
+      setError("We couldn't reach the store. Check your connection and try again.");
+    }
+  }
+
+  function handleDiscountChange(event){
+    setDiscountCode(event.target.value);
+    setAppliedDiscount(null); //The code changed, so it has to be applied again
+  }
 
   // Send the customer ID, pickup or delivery, and the cart to the server.
   // The server saves the order and sends back a receipt with the new OrderID.
@@ -63,6 +100,9 @@ function CheckoutPage() {
       orderType: orderType,
       deliveryAddress: orderType === "Delivery" ? deliveryAddress.trim() : null,
       items: items,
+      //Only send the code if Apply worked
+      //The server will check it again
+      discountCode: appliedDiscount ? appliedDiscount.discountCode : null,
     };
 
     setSending(true);
@@ -230,12 +270,18 @@ function CheckoutPage() {
             <p className="my-3" aria-live="polite">
               {totalQuantity} {totalQuantity === 1 ? "item" : "items"}
             </p>
+            {appliedDiscount && (
+              <div className="flex flex-wrap justify-between gap-2 py-1">
+                <span>Discount ({appliedDiscount.discountCode}, {appliedDiscount.discountPercent}%)</span>
+                <span>-{money(totalCents - finalCents)}</span>
+              </div>
+            )}
             <div
               className="flex flex-wrap justify-between gap-2 border-t py-3 font-semibold"
               aria-live="polite"
             >
               <span>Estimated total</span>
-              <span>{money(totalCents)}</span>
+              <span>{money(finalCents)}</span>
             </div>
             {!customer && (
               <p className="text-wrap!">
@@ -292,6 +338,18 @@ function CheckoutPage() {
                       />
                     </label>
                   )}
+                  {/*Optional code box: Apply checks the code now, the server checks it again when the order is placed*/}
+                  <label className="mt-3 block">
+                    Discount code
+                    <input
+                      type="text"
+                      maxLength={20}
+                      value={discountCode}
+                      onChange={handleDiscountChange}
+                      className="mt-1 block min-h-11 w-full rounded border px-3 py-2"
+                    />
+                  </label>
+                  <button type="button" onClick={applyDiscount} className="mt-2 min-h-11 rounded border px-4 py-2">Apply</button>
                 </fieldset>
                 <p className="text-sm text-gray-700 text-wrap!">
                   This is a demo payment. You won’t be charged.

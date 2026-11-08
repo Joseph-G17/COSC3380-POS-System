@@ -84,4 +84,23 @@ async function getCustomerOrderHistory(customerId) {
   return orders;
 }
 
-module.exports = { findCustomerLogin, createCustomer, getCustomerOrderHistory };
+//Check a discount code for one customer before checkout
+async function checkDiscountCode(customerId, discountCode){
+  const discounts = await query('SELECT DiscountID, DiscountCode, DiscountPercent FROM Discounts WHERE DiscountCode = ?', [discountCode]);
+  if(discounts.length === 0){
+    const error = new Error('The discount code is invalid.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const usedOrders = await query('SELECT OrderID FROM Orders WHERE CustomerID = ? AND DiscountID = ?', [customerId, discounts[0].DiscountID]);
+
+  if(usedOrders.length > 0){
+    const error = new Error('You have used this code before.');
+    error.statusCode = 409;
+    throw error;
+  }
+  return { discountCode: discounts[0].DiscountCode, discountPercent: discounts[0].DiscountPercent };
+}
+
+module.exports = { findCustomerLogin, createCustomer, getCustomerOrderHistory, checkDiscountCode };
