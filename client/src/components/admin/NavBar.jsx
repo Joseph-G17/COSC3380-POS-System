@@ -29,6 +29,10 @@ const NavBar = ({ employee }) => {
             </form>
           </search>
           <section className='flex space-x-4 ml-auto'>
+            <button className="p-1 border rounded button-highlight" >
+              <img width="24" height="24" src="https://img.icons8.com/material-rounded/24/alarm.png" alt="alarm"/>
+              <p className="absolute text-red-400">0</p>
+            </button>
             <button className='button-highlight p-1 border' onClick={()=> navigate('/cashier')} > 
               POS
             </button>
@@ -36,7 +40,7 @@ const NavBar = ({ employee }) => {
               CLOCK-IN
             </button>
             <button className='button-highlight p-1 border' onClick={logoutPopUp}> 
-              Welcome, {employee && employee.firstName}
+              LOG OUT
             </button>
           </section>
         </div>
