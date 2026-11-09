@@ -13,7 +13,8 @@ const ID_FIELDS = {
     Departments: 'DepartmentID',
     Returns: 'ReturnID',
     Inventory: 'InventoryID',
-    Customers: 'CustomerID'
+    Customers: 'CustomerID',
+    Shipments: 'ShipmentID'
   };
 
 const HomePage = () => {

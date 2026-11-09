@@ -40,6 +40,60 @@ async function updateEmployeeHours(req, res) {
 
 }
 
+// desc: Gets an employee's username for Manage Employees
+// route: GET /api/employee-login/:id
+async function getLoginInfo(req, res, id) {
+  try {
+    const rows = await Employees.findLoginInfo(id);
+    const username = rows.length > 0 ? rows[0].EmployeeUsername : ''; //new employees may not have a login yet
+
+    res.writeHead(200, {'Content-Type': 'application/json'});
+    res.end(JSON.stringify({ username }));
+  } catch(error) {
+    console.log(error);
+    res.writeHead(404, {'Content-Type': 'application/json'});
+    res.end(JSON.stringify({ message: 'Could not load login'}));
+  }
+}
+
+// desc: Changes an employee's username and/or password, or makes a login if they have none
+// route: PUT /api/employee-login
+async function updateLoginInfo(req, res) {
+  try {
+    const body = await getPostData(req);
+    const {id, username, password} = JSON.parse(body);
+
+    const rows = await Employees.findLoginInfo(id);
+
+    if (rows.length === 0) {
+      if (!username || !password) {
+        res.writeHead(400, {'Content-Type': 'application/json'});
+        return res.end(JSON.stringify({ message: 'A new login needs a username and password'}));
+      }
+      await Employees.createLogin(id, username, password);
+    }
+    else {
+      //only change the boxes that were filled in
+      const changes = {};
+      if (username) changes.EmployeeUsername = username;
+      if (password) changes.EmployeePassword = password;
+
+      if (Object.keys(changes).length === 0) {
+        res.writeHead(400, {'Content-Type': 'application/json'});
+        return res.end(JSON.stringify({ message: 'Nothing to update'}));
+      }
+      await Employees.updateLogin(id, changes);
+    }
+
+    res.writeHead(200, {'Content-Type': 'application/json'});
+    res.end(JSON.stringify({ message: `Login for ${id} updated!`}));
+  } catch(error) {
+    console.log(error);
+    res.writeHead(400, {'Content-Type': 'application/json'});
+    res.end(JSON.stringify({ message: error.sqlMessage || 'Update failed'})); //ex: username already taken
+  }
+}
+
 /* ORIGINAL FORM FORM FOR CONTROLLERS
 // desc: Update an Employee
 // route: PUT /api/employees/id
@@ -73,5 +127,7 @@ async function updateEmployee(req, res, id){
 
 module.exports = {
   getEmployeeLogin,
-  updateEmployeeHours
+  updateEmployeeHours,
+  getLoginInfo,
+  updateLoginInfo
 }

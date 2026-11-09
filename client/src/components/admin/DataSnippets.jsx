@@ -39,7 +39,8 @@ const DataSnippets = ({ entity, idField, refresh}) => {
       <div className="pb-4 pl-4 text-sm text-gray-500" >
         Total Rows: {rows.length}
       </div>
-      <div className='grid' 
+      {/*column names stay at the top while you scroll the rows*/}
+      <div className='grid sticky top-0 bg-white'
       style={{ gridTemplateColumns: `repeat(${headers.length || 1}, minmax(0, 1fr))` }}>
         {headers.map((h) => (
           <h2 className="border-b" key={h}> 
@@ -47,7 +48,7 @@ const DataSnippets = ({ entity, idField, refresh}) => {
           </h2>
         ))}
       </div>
-      <div className="max-h-[60vh] overflow-y-auto">
+      <div>
         {rows.map((row) => 
           <DataSnippet key={row[idField]} entity={entity} idField={idField} row={row} headers={headers}/>
         )}

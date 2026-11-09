@@ -1,5 +1,14 @@
 import { useState, useEffect } from 'react';
 
+//2026-10-01T05:00:00.000Z -> Oct 1, 2026
+const showDate = (value) => new Date(value).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+
+//12.5 -> 12h 30m
+const showHours = (value) => {
+  const totalMinutes = Math.round(Number(value) * 60);
+  return `${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m`;
+}
+
 const EmployeeHours = ({ employeeId }) => {
   const [periods, setPeriods] = useState([]);   
   const [formData, setFormData] = useState({}); 
@@ -69,7 +78,7 @@ const EmployeeHours = ({ employeeId }) => {
 
       {periods.map((p) => (
         <p key={p.PayPeriodStart} className="text-sm">
-          {p.PayPeriodStart} to {p.PayPeriodEnd}: {p.HoursWorked} hrs at ${p.HourlyRate}
+          {showDate(p.PayPeriodStart)} - {showDate(p.PayPeriodEnd)}: {showHours(p.HoursWorked)} at ${Number(p.HourlyRate).toFixed(2)}/hr
         </p>
       ))}
     </div>

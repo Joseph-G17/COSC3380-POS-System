@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import FormField from './formField';
 import { loadOptions, isRequired, getLabel } from './fieldHelpers';
+import NewCategory from './NewCategory';
 
 const AddNewEntity = ({ entity, onClose, onCreated }) => {
   const [columns, setColumns] = useState([]);
@@ -31,6 +32,12 @@ const AddNewEntity = ({ entity, onClose, onCreated }) => {
 
   const handleChange = (name, value) => {
     setFormData({...formData, [name]: value});
+  }
+
+  //new category goes into the dropdown and gets picked
+  const handleNewCategory = (id, name) => {
+    setOptions({...options, ItemCategoryID: [...(options.ItemCategoryID || []), { value: id, label: name }]});
+    setFormData({...formData, ItemCategoryID: id});
   }
 
   const handleConfirm = async() => {
@@ -65,7 +72,7 @@ const AddNewEntity = ({ entity, onClose, onCreated }) => {
   }
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto border-2 bg-white p-6">
         <h2 className="text-2xl underline pb-1">New {entity}</h2>
         <p className="pb-4 text-sm text-gray-500"><span className="text-red-600">*</span> required</p>
@@ -83,6 +90,8 @@ const AddNewEntity = ({ entity, onClose, onCreated }) => {
             />
           ))}
         </div>
+
+        {entity === 'Items' && <NewCategory onCreated={handleNewCategory}/>}
 
         <div className="flex space-x-2 pt-4">
           <button className="button-highlight p-1 border-2" onClick={handleConfirm}>Confirm</button>
