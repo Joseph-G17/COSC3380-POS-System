@@ -37,7 +37,7 @@ const LoginLayout = () => {
       }
       else if (user.Role == 1) {
         storeEmployeeLogin(user);
-        navigate("/manager");
+        navigate("/admin");
       }
       else if (user.Role == 2){
         storeEmployeeLogin(user);
@@ -101,7 +101,7 @@ const LoginLayout = () => {
           <button
             className="rounded button-highlight  p-2 text-2xl font-light border"
             type="button"
-            onClick={() => window.location.reload()}
+            onClick={() => navigate('/')}
           >
             Cancel
           </button>

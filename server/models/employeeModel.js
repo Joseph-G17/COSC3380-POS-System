@@ -18,6 +18,22 @@ function findEmployeeLogin(username){
   return query(sql, username);
 }
 
+//only the username, the password never leaves the server
+function findLoginInfo(id){
+  const sql = 'SELECT EmployeeUsername FROM \`Employee Logins\` WHERE EmployeeID = ?'
+  return query(sql, [id]);
+}
+
+function createLogin(id, username, password){
+  const sql = 'INSERT INTO \`Employee Logins\` (EmployeeID, EmployeeUsername, EmployeePassword) VALUES (?,?,?)'
+  return query(sql, [id, username, password]);
+}
+
+function updateLogin(id, changes){
+  const sql = 'UPDATE \`Employee Logins\` SET ? WHERE EmployeeID = ?'
+  return query(sql, [changes, id]);
+}
+
 function updateHours(id, hoursWorked){
   const sql = `UPDATE ?? SET hoursWorked = hoursWorked + ? WHERE EmployeeID = ?`
   const params = ['employee hours', hoursWorked, id];
@@ -54,6 +70,9 @@ function remove(id) {
 module.exports = {
   findAll,
   findEmployeeLogin,
+  findLoginInfo,
+  createLogin,
+  updateLogin,
   updateHours,
   create,
   update,

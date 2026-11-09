@@ -11,7 +11,8 @@ const ID_FIELDS = {
   Returns: 'ReturnID',
   Inventory: 'InventoryID',
   Customers: 'CustomerID',
-  'Employee Hours': 'EmployeeID'
+  'Employee Hours': 'EmployeeID',
+  Shipments: 'ShipmentID'
 }
 
 const LIST_QUERIES = {
@@ -20,10 +21,17 @@ const LIST_QUERIES = {
            CONCAT(e.FirstName, ' ', e.LastName) AS Name,
            e.Email,
            d.DepartmentName AS Department,
-           e.Role,
+           CASE WHEN e.Role = 1 THEN 'Admin' ELSE 'Cashier' END AS Role,
            e.HireDate
     FROM Employees e
     JOIN Departments d ON d.DepartmentID = e.DepartmentID`,
+
+  Departments: `
+    SELECT d.DepartmentID,
+           d.DepartmentName,
+           CONCAT(e.FirstName, ' ', e.LastName) AS Manager
+    FROM Departments d
+    JOIN Employees e ON e.EmployeeID = d.ManagerID`,
 
   Orders: `
     SELECT o.OrderID,
@@ -41,6 +49,7 @@ const LIST_QUERIES = {
     SELECT i.ItemID,
            i.ItemName,
            c.CategoryName AS Category,
+           c.Aisle,
            i.ItemPrice AS Price,
            i.ItemWeight AS Weight,
            i.ItemDescription AS Description
@@ -77,7 +86,21 @@ const LIST_QUERIES = {
            d.NewItemPrice,
            DATE(d.ExpirationDate) AS ExpirationDate
     FROM Discounts d
-    LEFT JOIN Items i ON i.ItemID = d.ItemID`
+    LEFT JOIN Items i ON i.ItemID = d.ItemID`,
+
+  //no arrival date means the shipment is still on its way
+  Shipments: `
+    SELECT s.ShipmentID,
+           it.ItemName AS Item,
+           s.SupplierName AS Supplier,
+           s.QuantityShipped AS Quantity,
+           s.ShipmentCost AS Cost,
+           COALESCE(DATE(s.ArrivalDate), 'On Order') AS ArrivalDate,
+           CONCAT(e.FirstName, ' ', e.LastName) AS ReceivedBy
+    FROM Shipments s
+    JOIN Inventory inv ON inv.InventoryID = s.InventoryID
+    JOIN Items it ON it.ItemID = inv.ItemID
+    JOIN Employees e ON e.EmployeeID = s.EmployeeID`
 }
 
 function findAll(entity){

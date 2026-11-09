@@ -13,7 +13,6 @@ import ClockInPage from './pages/admin/ClockInPage';
 import EditProfilePage from './pages/admin/EditProfilePage';
 import InspectDataPage from './pages/admin/InspectDataPage';
 
-import ManagerLayout from './layouts/ManagerLayout';
 
 // Public shop and checkout share one cart; customer forms open on separate routes.
 import OnlineStoreLayout from './layouts/OnlineStoreLayout'; // Holds the shared customer cart and navigation.
@@ -56,13 +55,6 @@ const App = () => {
           <Route path='clock-in' element={<ClockInPage />}/>
         </Route>
 
-        <Route path='/manager' element={<ManagerLayout /> }>
-          <Route index element={<Navigate to="manage/Employees" replace />} />
-          <Route path='inspectData/:entity/:id' element={<InspectDataPage />}/>
-          <Route path='manage/:entity' element={<HomePage /> } />
-          <Route path='reports/:report' element={<ReportsPage />}/>
-          <Route path='clock-in' element={<ClockInPage />}/>
-        </Route>
         
         <Route path='/cashier' element={<CashierMainLayout />}>
           <Route index element={<CashierCheckout />} />

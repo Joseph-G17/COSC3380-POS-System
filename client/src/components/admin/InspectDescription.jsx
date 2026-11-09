@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import FormField from './formField';
 import { loadOptions, isRequired, getLabel } from './fieldHelpers';
 import EmployeeHours from './EmployeeHours';
+import EmployeeLogin from './EmployeeLogin';
+import NewCategory from './NewCategory';
 
 const InspectDescription = ({entity, id, idField}) => { 
   const navigate = useNavigate();
@@ -45,6 +47,12 @@ const InspectDescription = ({entity, id, idField}) => {
   const handleChange = (name, value) => {
     setFormData({...formData, [name]: value});
     setMessage('');
+  }
+
+  //new category goes into the dropdown and gets picked
+  const handleNewCategory = (newId, name) => {
+    setOptions({...options, ItemCategoryID: [...(options.ItemCategoryID || []), { value: newId, label: name }]});
+    handleChange('ItemCategoryID', newId);
   }
 
   //only the attributes that were actually changed
@@ -132,6 +140,8 @@ const InspectDescription = ({entity, id, idField}) => {
         ))}
       </div>
 
+      {entity === 'Items' && <NewCategory onCreated={handleNewCategory}/>}
+
       <div className="flex space-x-2 pt-4">
         <button
           className='button-highlight border px-2 disabled:opacity-50'
@@ -150,6 +160,7 @@ const InspectDescription = ({entity, id, idField}) => {
         </p>
       )}
 
+      {entity === 'Employees' && <EmployeeLogin employeeId={id} />}
       {entity === 'Employees' && <EmployeeHours employeeId={id} />}
     </div>
   )

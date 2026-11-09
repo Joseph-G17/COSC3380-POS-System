@@ -30,10 +30,13 @@ const AdminLayout = () => {
   }, [employeeExists, navigate]) //check if employee exists on navigate or if employee happens to not exist
 
   return (
-    <div className='grid min-h-dvh grid-cols-[15rem_1fr] grid-rows-[auto_1fr]'>
+    <div className='admin-layout grid h-dvh grid-cols-[15rem_1fr] grid-rows-[auto_minmax(0,1fr)]'>
       <SideBar />
       <NavBar employee={employee} />
-      <Outlet context={{employee, setEmployee}} />
+      {/*only this part scrolls so the sidebar and nav bar stay put*/}
+      <main className='admin-main grid overflow-y-auto'>
+        <Outlet context={{employee, setEmployee}} />
+      </main>
     </div>
   )
 }

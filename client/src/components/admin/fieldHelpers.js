@@ -8,10 +8,17 @@ export const FOREIGN_KEYS = {
   CustomerID: { entity: 'Customers', idField: 'CustomerID', label: (r) => `${r.FirstName} ${r.LastName}` },
   ItemCategoryID: { entity: 'Item Categories', idField: 'ItemCategoryID', label: (r) => r.CategoryName },
   ItemID: { entity: 'Items', idField: 'ItemID', label: (r) => r.ItemName },
+  InventoryID: { entity: 'Inventory', idField: 'InventoryID', label: (r) => `${r.Item} (${r.Supplier || 'No supplier'})` },
   OrderID: { entity: 'Orders', idField: 'OrderID', label: (r) => `Order #${r.OrderID} - ${r.Customer} (${r.OrderDate})` },
   SaleID: { entity: 'Sales', idField: 'SaleID', label: (r) => r.SaleName },
   DiscountID: { entity: 'Discounts', idField: 'DiscountID', label: (r) => r.Code || r.DiscountCode }
 }
+
+//Role is saved as a number in the db
+export const ROLES = [
+  { value: 0, label: 'Cashier' },
+  { value: 1, label: 'Admin' }
+];
 
 //'DepartmentID' -> 'DepartmentName', 'LastFourDigits' -> 'Last Four Digits'
 export const getLabel = (field) => field.replace(/ID$/, '').replace(/([a-z])([A-Z])/g, '$1 $2');
@@ -24,6 +31,8 @@ export const loadOptions = async (columns) => {
   const options = {};
 
   for (const col of columns) {
+    if (col.Field === 'Role') options.Role = ROLES;
+
     const fk = FOREIGN_KEYS[col.Field];
     if (!fk || col.Extra === 'auto_increment') continue;
 
