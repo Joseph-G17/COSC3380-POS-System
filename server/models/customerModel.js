@@ -2,7 +2,7 @@ const { query, withTransaction } = require('../sqlConnecter');
 
 const PUBLIC_CUSTOMER_SELECT = `
   SELECT c.CustomerID AS customerID, c.FirstName AS firstName,
-         c.LastName AS lastName, c.Email AS email,
+         c.LastName AS lastName, c.Email AS email, c.PhoneNumber AS phoneNumber,
          l.CustomerUsername AS username,
          DATE_FORMAT(c.MembershipExpirationDate, '%Y-%m-%dT%H:%i:%s.000Z')
            AS membershipExpirationDate
@@ -13,7 +13,7 @@ async function findCustomerLogin(username) {
   // storedPassword is used for comparison and is excluded from API replies.
   const sql = `
     SELECT c.CustomerID AS customerID, c.FirstName AS firstName,
-           c.LastName AS lastName, c.Email AS email,
+           c.LastName AS lastName, c.Email AS email, c.PhoneNumber AS phoneNumber,
            l.CustomerUsername AS username,
            DATE_FORMAT(c.MembershipExpirationDate, '%Y-%m-%dT%H:%i:%s.000Z')
              AS membershipExpirationDate,
@@ -45,7 +45,20 @@ async function createCustomer(data) {
       PUBLIC_CUSTOMER_SELECT + ' WHERE c.CustomerID = ? LIMIT 1',
       [created.insertId],
     );
-    return rows[0];
+    return rows[0] || null;
+  });
+}
+
+//Save the new profile info, then read the customer again to send back
+async function updateCustomer(customerId, data){
+  return withTransaction(async (runQuery) => {
+    const updated = await runQuery('UPDATE Customers SET FirstName = ?, LastName = ?, Email = ?, PhoneNumber = ? WHERE CustomerID = ?', [data.firstName, data.lastName, data.email, data.phoneNumber, customerId]);
+
+    await runQuery('UPDATE `Customer Logins` SET CustomerUsername = ? WHERE CustomerID = ?', [data.username, customerId]);
+
+    const reRead = await runQuery(PUBLIC_CUSTOMER_SELECT + ' WHERE c.CustomerID = ? LIMIT 1', [customerId]);
+
+    return reRead[0] || null;
   });
 }
 
@@ -103,4 +116,4 @@ async function checkDiscountCode(customerId, discountCode){
   return { discountCode: discounts[0].DiscountCode, discountPercent: discounts[0].DiscountPercent };
 }
 
-module.exports = { findCustomerLogin, createCustomer, getCustomerOrderHistory, checkDiscountCode };
+module.exports = { findCustomerLogin, createCustomer, getCustomerOrderHistory, checkDiscountCode, updateCustomer };
