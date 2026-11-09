@@ -5,7 +5,7 @@ const { getEntities, getEntity, updateEntity, deleteEntity, getEntityColumns, cr
 const { getReport } = require('./controllers/reportsController')
 
 //cashier:
-const {adjustItemStock, createOrder, loginEmployee } = require('./controllers/itemController');
+const {adjustItemStock, createOrder, loginEmployee, getItems } = require('./controllers/itemController');
 
 // Load the customer handlers; their specific routes must precede generic entity routes.
 const { getProducts } = require('./controllers/OnlineStoreController');
@@ -55,6 +55,16 @@ const handler = (req, res) => {
 
   if(req.url === '/api/login' && req.method === 'POST'){
     getEmployeeLogin(req, res);
+  }
+  else if(req.url.split('?')[0] === '/api/orders' && req.method === 'POST'){
+    createOrder(req, res);
+  }
+  else if(req.url.split('?')[0] === '/api/Items' && req.method === 'GET'){
+    getItems(req, res);
+  }
+  else if(req.url.split('?')[0].match(/^\/api\/Items\/([0-9]+)\/stock$/) && req.method === 'POST'){
+    const [, id] = req.url.split('?')[0].match(/^\/api\/Items\/([0-9]+)\/stock$/);
+    adjustItemStock(req, res, id);
   }
   // ProductList and Sidebar need these customer APIs before generic table matching.
   else if(req.url === '/api/products' && req.method === 'GET'){

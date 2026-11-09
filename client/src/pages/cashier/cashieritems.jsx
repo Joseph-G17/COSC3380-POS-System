@@ -9,7 +9,7 @@ const CashierViewitems = () => {
   useEffect(() => {
     const loadItems = async () => {
       try {
-        const response = await fetch('/api/items');
+        const response = await fetch('/api/Items');
         if (!response.ok) throw new Error('Could not load items');
 
         const data = await response.json();
@@ -31,7 +31,7 @@ const CashierViewitems = () => {
     setUpdatingItemId(item.ItemID);
 
     try {
-      const response = await fetch(`/api/items/${item.ItemID}/stock`, {
+      const response = await fetch(`/api/Items/${item.ItemID}/stock`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ change })

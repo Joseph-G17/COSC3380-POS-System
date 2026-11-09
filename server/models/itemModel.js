@@ -23,6 +23,15 @@ function findall(entity){
   return query(sql);
 }
 
+function findItemByID(id) {
+  const sql = `SELECT Items.*, COALESCE(SUM(Inventory.Stock), 0) AS Stock
+    FROM Items
+    LEFT JOIN Inventory ON Inventory.ItemID = Items.ItemID
+    WHERE Items.ItemID = ?
+    GROUP BY Items.ItemID`;
+  return query(sql, [id]);
+}
+
 function findAll(){
   return query('SELECT * FROM Employees');
 }
@@ -276,6 +285,7 @@ async function createOrder({ employeeId, customerId, paymentMethod, items }) {
 
 module.exports = {
   findall,
+  findItemByID,
   findAll,
   findByID,
   create,

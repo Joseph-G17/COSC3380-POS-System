@@ -25,8 +25,7 @@ const LoginLayout = () => {
       // A failed login has no employeeID: stay here. No visible error is shown yet.
       if (!data.employeeID) return;
 
-      // This local value is not used below and does not save a signed-in session.
-      const currentEmployeeID = data.employeeID;
+      sessionStorage.setItem("employeeID", String(data.employeeID));
 
       // Follow the current employee-role paths: 0 or 1 -> admin, others -> store.
       // Returning to the store here does not authenticate a customer account.

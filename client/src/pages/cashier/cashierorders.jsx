@@ -22,7 +22,7 @@ const CashierOrders = () => {
   useEffect(() => {
     const loadOrders = async () => {
       try {
-        const response = await fetch('/api/orders');
+        const response = await fetch('/api/Orders');
         if (!response.ok) throw new Error('Could not load orders');
 
         const data = await response.json();
