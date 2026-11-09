@@ -68,10 +68,13 @@ async function getCustomerOrderHistory(customerId) {
     SELECT CAST(o.OrderID AS CHAR) AS orderId,
            DATE_FORMAT(o.OrderDate, '%Y-%m-%d %H:%i:%s') AS orderDate,
            o.OrderType AS orderType, o.OrderTotal AS total,
+           a.Address AS deliveryAddress, d.DiscountCode AS discountCode, d.DiscountPercent AS discountPercent,
            CAST(oi.ItemID AS CHAR) AS itemId, i.ItemName AS name,
            oi.QuantityOrdered AS quantity, oi.ItemPrice AS unitPrice
     FROM Orders o
     LEFT JOIN \`Ordered Items\` oi ON oi.OrderID = o.OrderID
+    LEFT JOIN Addresses a ON a.AddressID = o.ShippingAddressID
+    LEFT JOIN Discounts d ON d.DiscountID = o.DiscountID
     LEFT JOIN Items i ON i.ItemID = oi.ItemID
     WHERE o.CustomerID = ?
     ORDER BY o.OrderDate DESC, o.OrderID DESC, oi.ItemID`, [customerId]);
@@ -83,7 +86,8 @@ async function getCustomerOrderHistory(customerId) {
     if (!order || order.orderId !== row.orderId) {
       order = {
         orderId: row.orderId, orderDate: row.orderDate, orderType: row.orderType,
-        total: Number(row.total), items: [],
+        total: Number(row.total), deliveryAddress: row.deliveryAddress,
+        discountCode: row.discountCode, discountPercent: row.discountPercent, items: [],
       };
       orders.push(order);
     }
