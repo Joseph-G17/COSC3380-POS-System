@@ -13,6 +13,7 @@ const { getCategories } = require('./controllers/categoriesController');
 const {
   signupCustomer,
   loginCustomer,
+  updateProfile,
 } = require('./controllers/customerController');
 
 const { getOrderHistory, placeOnlineOrder, checkDiscount } = require('./controllers/customerOrderController');
@@ -22,14 +23,16 @@ const customerRoutes = {
   '/api/customer/login': { POST: loginCustomer },
   '/api/customer/orders': { GET: getOrderHistory, POST: placeOnlineOrder },
   '/api/customer/discount': { GET: checkDiscount },
+  '/api/customer/profile': { PUT: updateProfile },
 };
+
 
 const handler = (req, res) => {
   const incoming = new URL(req.url, 'http://localhost');
   const path = incoming.searchParams.get('path');
   if (path !== null) {
     incoming.searchParams.delete('path');
-    const rest = incoming.searchParams.toString();
+    const rest = incoming.searchParams.toString();  
     req.url = '/api/' + path + (rest ? '?' + rest : ''); // change req.url if rest of url exists after path: /api/products?rest or /api/products
   }
 

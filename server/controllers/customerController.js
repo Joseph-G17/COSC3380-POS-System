@@ -26,6 +26,40 @@ async function loginCustomer(req, res) {
   }
 }
 
+//Customer edits username, name, email and phone on the profile page
+async function updateProfile(req, res){
+  try{
+    const body = await readJsonBody(req);
+    const customerId = Number(body.customerId);
+    if(!Number.isSafeInteger(customerId) || customerId < 1){
+      throw requestError(400, 'Log in to edit your profile.');
+    }
+    const fields = {
+      firstName: limitedText(body, 'firstName', 'First name', 30),
+      lastName: limitedText(body, 'lastName', 'Last name', 30),
+      email: limitedText(body, 'email', 'Email', 255).toLowerCase(),
+      phoneNumber: limitedText(body, 'phoneNumber', 'Phone number', 10),
+      username: limitedText(body, 'username', 'Username', 30),
+    };
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.email)){
+      throw requestError(400, 'Enter a valid email address.');
+    }
+    if(!/^[0-9]{10}$/.test(fields.phoneNumber)){
+      throw requestError(400, 'Phone number must contain exactly 10 digits.');
+    }
+    if(!/^[A-Za-z0-9._-]{3,30}$/.test(fields.username)){
+      throw requestError(400, 'Username must contain 3 to 30 letters, numbers, dots, underscores or hyphens.');
+    }
+    const customer = await Customers.updateCustomer(customerId, fields);
+    if(!customer){
+      throw requestError(404, 'Customer account was not found.');
+    }
+    sendJson(res, 200, { customer: publicCustomer(customer) });
+  }catch(error){
+    sendError(res, error);
+  }
+}
+
 // Send only these public fields, never the password or input-only fields.
 function publicCustomer(customer) {
   return {
@@ -33,6 +67,7 @@ function publicCustomer(customer) {
     firstName: customer.firstName,
     lastName: customer.lastName,
     email: customer.email,
+    phoneNumber: customer.phoneNumber,
     username: customer.username,
     membershipExpirationDate: customer.membershipExpirationDate,
   };
@@ -58,7 +93,7 @@ function sendError(res, error) {
     return sendJson(res, error.status, { message: error.message });
   }
   if (error.code === 'ER_DUP_ENTRY') {
-    return sendJson(res, 409, { message: 'Username or email is already in use.' });
+    return sendJson(res, 409, { message: 'Username, email or phone number is already in use.' });
   }
   // Keep SQL text and passwords out of replies and logs.
   console.error('Customer account request failed:', error.code || error.name || 'UnknownError');
@@ -140,4 +175,4 @@ function signupFields(body) {
   return fields;
 }
 
-module.exports = { signupCustomer, loginCustomer, readJsonBody, sendJson };
+module.exports = { signupCustomer, loginCustomer, readJsonBody, sendJson, updateProfile };

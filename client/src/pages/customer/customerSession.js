@@ -8,7 +8,7 @@ function profileFields(customer) {
   if (!Number.isSafeInteger(id) || id <= 0) return null;
 
   const profile = { customerID: id, firstName: customer.firstName };
-  for (const field of ["lastName", "email", "username", "membershipExpirationDate"]) {
+  for (const field of ["lastName", "email", "username", "membershipExpirationDate", "phoneNumber"]) {
     if (typeof customer[field] === "string") profile[field] = customer[field];
   }
   return profile;
@@ -28,6 +28,8 @@ export function saveCustomer(customer) {
   if (!profile) return false;
   try {
     sessionStorage.setItem(customerKey, JSON.stringify(profile));
+    //Tell the navbar that the saved customer changed
+    window.dispatchEvent(new Event("saveso-customer-change"));
     return true;
   } catch {
     return false;

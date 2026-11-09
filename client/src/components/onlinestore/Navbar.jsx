@@ -15,6 +15,17 @@ const Navbar = ({ totalItemsQuantity, onOpenCart, isCartOpen, searchText, onSear
   const { pathname } = useLocation();
   const [customer, setCustomer] = useState(loadCustomer);
 
+  //Read the customer again when the profile page saves new info
+  useEffect(function () {
+    function reloadCustomer() {
+      setCustomer(loadCustomer());
+    }
+    window.addEventListener("saveso-customer-change", reloadCustomer);
+    return function () {
+      window.removeEventListener("saveso-customer-change", reloadCustomer);
+    };
+  }, []);
+
   function logOutCustomer() {
     clearCustomer();
     setCustomer(null);
