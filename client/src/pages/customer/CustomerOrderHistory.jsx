@@ -20,10 +20,16 @@ function OrderList({ orders }) {
               {order.items.map(item => (
                 <li key={item.itemId} className="flex flex-wrap justify-between gap-x-3">
                   <span className="min-w-0 text-wrap! wrap-anywhere">{item.name}</span>
-                  <span>{item.quantity} × {currency.format(item.unitPrice)}</span>
+                  <span>{item.quantity} x {currency.format(item.unitPrice)}</span>
                 </li>
               ))}
             </ul>
+            {order.deliveryAddress && (
+              <p className="mt-2 text-sm text-gray-600 text-wrap!">Delivery to {order.deliveryAddress}</p>
+            )}
+            {order.discountCode && (
+              <p className="mt-2 text-sm text-gray-600 text-wrap!">Discount {order.discountCode} ({order.discountPercent}% off)</p>
+            )}
           </details>
         </li>
       ))}
