@@ -251,8 +251,11 @@ async function createOrder({ employeeId, customerId, paymentMethod, items, order
 
     const fields = { EmployeeID: employeeId, CustomerID: customerId, OrderType: orderType,
       OrderTotal: (totalInCents / 100).toFixed(2), PaymentMethod: paymentMethod };
-    // Only delivery orders save an address.
-    if (orderType === 'Delivery') fields.DeliveryAddress = deliveryAddress;
+    //Delivery: save the typed address in Addresses first, then link it to the order
+    if(orderType === 'Delivery'){
+      const address = await runQuery('INSERT INTO Addresses (CustomerID, Address, AddressType) VALUES (?, ?, ?)', [customerId, deliveryAddress, 'Shipping']);
+      fields.ShippingAddressID = address.insertId;
+    }
     //Save the code on the order, so the next order knows it was used
     if(discountId !== null){
       fields.DiscountID = discountId;
