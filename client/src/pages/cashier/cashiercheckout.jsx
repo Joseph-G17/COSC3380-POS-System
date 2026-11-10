@@ -13,6 +13,8 @@ const CashierCheckout = () => {
   const [cart, setCart] = useState([]);
   const [search, setSearch] = useState('');
   const [discountSearch, setDiscountSearch] = useState('');
+  const [appliedDiscount, setAppliedDiscount] = useState(null);
+  const [discountCodeError, setDiscountCodeError] = useState('');
   const [discountsError, setDiscountsError] = useState('');
   const [areDiscountsLoading, setAreDiscountsLoading] = useState(true);
   const [customerId, setCustomerId] = useState('');
@@ -97,15 +99,34 @@ const CashierCheckout = () => {
     if (!normalizedSearch) return [];
 
     return discounts.filter((discount) =>
-      [discount.DiscountCode, discount.ItemID, discount.DiscountID]
+      [discount.Code, discount.Item, discount.DiscountID]
         .some((value) => String(value ?? '').toLowerCase().includes(normalizedSearch))
     );
   }, [discounts, discountSearch]);
 
-  const totalInCents = cart.reduce(
+  const subtotalInCents = cart.reduce(
     (total, cartItem) => total + cartItem.item.priceInCents * cartItem.quantity,
     0
   );
+  const totalInCents = appliedDiscount
+    ? Math.round(subtotalInCents * (100 - Number(appliedDiscount.PercentOff)) / 100)
+    : subtotalInCents;
+  const discountAmountInCents = subtotalInCents - totalInCents;
+
+  const applyDiscountCode = () => {
+    const enteredCode = discountSearch.trim().toLowerCase();
+    const discount = discounts.find(
+      (candidate) => String(candidate.Code ?? '').trim().toLowerCase() === enteredCode
+    );
+
+    if (!discount) {
+      setDiscountCodeError('Enter a valid discount code.');
+      return;
+    }
+
+    setAppliedDiscount(discount);
+    setDiscountCodeError('');
+  };
 
   const addItem = (item) => {
     setCart((currentCart) => {
@@ -147,6 +168,7 @@ const CashierCheckout = () => {
           employeeId: Number(employeeId),
           customerId: Number(customerId),
           paymentMethod,
+          discountCode: appliedDiscount?.Code ?? null,
           items: cart.map(({ item, quantity }) => ({
             itemId: Number(item.ItemID),
             quantity
@@ -164,6 +186,8 @@ const CashierCheckout = () => {
       }));
       setCart([]);
       setCustomerId('');
+      setAppliedDiscount(null);
+      setDiscountSearch('');
       setSuccessMessage(`Order #${result.OrderID} was created. Total: ${formatPrice(Math.round(Number(result.OrderTotal) * 100))}`);
     } catch (checkoutError) {
       setError(checkoutError instanceof Error ? checkoutError.message : 'Could not complete checkout');
@@ -298,14 +322,9 @@ const CashierCheckout = () => {
             </ul>
           )}
 
-          <div className="mt-4 flex items-center justify-between border-t pt-4 text-xl font-semibold">
-            <span>Total</span>
-            <span aria-live="polite">{formatPrice(totalInCents)}</span>
-          </div>
-
           <section className="mt-5 border-t pt-5" aria-labelledby="discount-search-heading">
             <h3 id="discount-search-heading" className="mb-2 text-lg font-medium">
-              Find a discount
+              Apply a discount code
             </h3>
             <label className="sr-only" htmlFor="discount-search">
               Search discounts by code or item ID
@@ -316,12 +335,24 @@ const CashierCheckout = () => {
               type="search"
               placeholder="Search discount code or item ID"
               value={discountSearch}
-              onChange={(event) => setDiscountSearch(event.target.value)}
+              onChange={(event) => {
+                setDiscountSearch(event.target.value);
+                setDiscountCodeError('');
+              }}
             />
+            <button
+              className="mt-2 w-full rounded border border-amber-600 px-3 py-2 font-medium text-amber-800 hover:bg-amber-50 disabled:opacity-50"
+              type="button"
+              disabled={areDiscountsLoading || Boolean(discountsError) || !discountSearch.trim() || isSubmitting}
+              onClick={applyDiscountCode}
+            >
+              Apply code
+            </button>
+            {discountCodeError && <p className="mt-2 text-sm text-red-700" role="alert">{discountCodeError}</p>}
             {areDiscountsLoading && <p className="mt-2 text-sm text-gray-600">Loading discounts...</p>}
             {discountsError && <p className="mt-2 text-sm text-red-700" role="alert">{discountsError}</p>}
             {!areDiscountsLoading && !discountsError && !discountSearch.trim() && (
-              <p className="mt-2 text-sm text-gray-600">Enter a discount code or item ID to search.</p>
+              <p className="mt-2 text-sm text-gray-600">Enter a discount code to apply it to this order.</p>
             )}
             {!areDiscountsLoading && !discountsError && discountSearch.trim() && filteredDiscounts.length === 0 && (
               <p className="mt-2 text-sm text-gray-600">No matching discounts found.</p>
@@ -330,12 +361,12 @@ const CashierCheckout = () => {
               <ul className="mt-3 max-h-40 divide-y overflow-y-auto rounded border">
                 {filteredDiscounts.map((discount) => (
                   <li className="p-3 text-sm" key={discount.DiscountID}>
-                    <p className="font-medium">{discount.DiscountCode}</p>
+                    <p className="font-medium">{discount.Code}</p>
                     <p className="text-gray-600">
-                      {discount.DiscountPercent}% off
+                      {discount.PercentOff}% off
                       {discount.NewItemPrice != null &&
                         ` · New price ${formatPrice(Math.round(Number(discount.NewItemPrice) * 100))}`}
-                      {discount.ItemID != null && ` · Item ${discount.ItemID}`}
+                      {discount.Item != null && ` · ${discount.Item}`}
                     </p>
                     {discount.ExpirationDate && (
                       <p className="text-gray-500">Expires {discount.ExpirationDate}</p>
@@ -344,10 +375,37 @@ const CashierCheckout = () => {
                 ))}
               </ul>
             )}
-            <p className="mt-2 text-xs text-gray-500">
-              Discount lookup only; discounts are not applied to the order total.
-            </p>
+            {appliedDiscount && (
+              <div className="mt-3 flex items-center justify-between gap-3 rounded bg-green-50 p-3 text-sm text-green-800" role="status">
+                <span>Code {appliedDiscount.Code} applied ({appliedDiscount.PercentOff}% off).</span>
+                <button
+                  className="shrink-0 underline"
+                  type="button"
+                  disabled={isSubmitting}
+                  onClick={() => setAppliedDiscount(null)}
+                >
+                  Remove
+                </button>
+              </div>
+            )}
           </section>
+
+          <div className="mt-4 space-y-2 border-t pt-4">
+            <div className="flex items-center justify-between text-sm">
+              <span>Subtotal</span>
+              <span>{formatPrice(subtotalInCents)}</span>
+            </div>
+            {appliedDiscount && (
+              <div className="flex items-center justify-between text-sm text-green-700">
+                <span>Discount</span>
+                <span>−{formatPrice(discountAmountInCents)}</span>
+              </div>
+            )}
+            <div className="flex items-center justify-between text-xl font-semibold">
+              <span>Total</span>
+              <span aria-live="polite">{formatPrice(totalInCents)}</span>
+            </div>
+          </div>
 
           <form className="mt-5 space-y-4 border-t pt-5" onSubmit={checkout}>
             <div>
