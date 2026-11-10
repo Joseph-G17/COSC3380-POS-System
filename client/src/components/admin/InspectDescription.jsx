@@ -15,6 +15,17 @@ const InspectDescription = ({entity, id, idField}) => {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
   const [showHours, setShowHours] = useState(false);
+  const [departments, setDepartments] = useState([]);
+  const [moveTo, setMoveTo] = useState('');
+
+  //deleting a department moves its employees somewhere else first
+  useEffect(() => {
+    if (entity !== 'Departments') return;
+    fetch('/api/Departments')
+      .then((response) => response.json())
+      .then((rows) => setDepartments(Array.isArray(rows) ? rows.filter((d) => String(d.DepartmentID) !== String(id)) : []))
+      .catch((error) => console.log(error));
+  }, [entity, id]);
 
   useEffect(() => {
     const loadData = async() => {
@@ -99,9 +110,14 @@ const InspectDescription = ({entity, id, idField}) => {
 
   //delete whole entity
   const handleDelete = async() => {
-    if (!window.confirm(`Delete this ${entity} record? This cannot be undone.`)) return;
+    const target = departments.find((d) => String(d.DepartmentID) === String(moveTo));
+    const prompt = target
+      ? `Move this department's employees to ${target.DepartmentName} and delete it? This cannot be undone.`
+      : `Delete this ${entity} record? This cannot be undone.`;
+    if (!window.confirm(prompt)) return;
     try{
-      const response = await fetch(`/api/${entity}/${id}`,{
+      const query = entity === 'Departments' && moveTo ? `?moveTo=${moveTo}` : '';
+      const response = await fetch(`/api/${entity}/${id}${query}`,{
         method: 'DELETE',
         headers: {'Content-Type': 'application/json'}
       });
@@ -141,6 +157,16 @@ const InspectDescription = ({entity, id, idField}) => {
       </div>
 
       {entity === 'Items' && <NewCategory onCreated={handleNewCategory}/>}
+
+      {entity === 'Departments' && (
+        <div className="flex flex-col pt-4 max-w-xs">
+          <label htmlFor="moveTo">Move employees to (needed to delete a department that has employees)</label>
+          <select id="moveTo" className="border" value={moveTo} onChange={(e) => { setMoveTo(e.target.value); setMessage(''); }}>
+            <option value=''>None</option>
+            {departments.map((d) => <option key={d.DepartmentID} value={d.DepartmentID}>{d.DepartmentName}</option>)}
+          </select>
+        </div>
+      )}
 
       <div className="flex space-x-2 pt-4">
         <button

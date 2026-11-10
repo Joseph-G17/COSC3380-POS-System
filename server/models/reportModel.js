@@ -2,8 +2,20 @@ let { query } = require('../sqlConnecter');
 
 //formatted like the view in mysql
 //summary = the boxes at the top of the report, each one is a single number
+//source = the view's own SELECT, used instead of the view itself. The salessummary and
+//itemperformance views can import as placeholders (every column = 1) when the dump's
+//DEFINER user doesn't exist, so these reports run the query directly.
 const REPORTS = {
   SalesSummary: {
+    source: `
+      SELECT DATE(o.OrderDate) AS SaleDate,
+             o.OrderType,
+             o.PaymentMethod,
+             COUNT(*) AS OrderCount,
+             SUM(o.OrderTotal) AS TotalSales,
+             ROUND(AVG(o.OrderTotal), 2) AS AvgOrder
+      FROM Orders o
+      GROUP BY DATE(o.OrderDate), o.OrderType, o.PaymentMethod`,
     title: 'Revenue Report',
     description: 'How much money the store made each day, split by order type and payment method.',
     orderBy: 'SaleDate DESC',
@@ -21,25 +33,20 @@ const REPORTS = {
       minSales: { column: 'TotalSales', op: '>=' }
     }
   },
-  EmployeeSales: {
-    title: 'Employee Sales Report',
-    description: 'How much each employee sold and returned each month.',
-    orderBy: 'ActivityMonth DESC, EmployeeName',
-    summary: [
-      { label: 'Employees', sql: 'COUNT(DISTINCT EmployeeID)' },
-      { label: 'Total Sales', sql: 'SUM(TotalSales)', money: true },
-      { label: 'Orders', sql: 'SUM(OrderCount)' },
-      { label: 'Total Returned', sql: 'SUM(TotalReturned)', money: true }
-    ],
-    filters: {
-      employee: { column: 'EmployeeName', op: 'LIKE' },
-      department: { column: 'Department', op: '=' },
-      from: { column: 'ActivityMonth', op: '>=' },
-      to: { column: 'ActivityMonth', op: '<=' },
-      minSales: { column: 'TotalSales', op: '>=' }
-    }
-  },
   ItemPerformance: {
+    source: `
+      SELECT it.ItemID,
+             it.ItemName,
+             c.CategoryName AS Category,
+             it.ItemPrice,
+             (SELECT IFNULL(SUM(oi.QuantityOrdered), 0)
+                FROM \`Ordered Items\` oi WHERE oi.ItemID = it.ItemID) AS UnitsSold,
+             (SELECT IFNULL(SUM(oi.QuantityOrdered * oi.ItemPrice), 0)
+                FROM \`Ordered Items\` oi WHERE oi.ItemID = it.ItemID) AS Revenue,
+             (SELECT IFNULL(SUM(ri.QuantityReturned), 0)
+                FROM \`Returned Items\` ri WHERE ri.ItemID = it.ItemID) AS UnitsReturned
+      FROM Items it
+      JOIN \`Item Categories\` c ON c.ItemCategoryID = it.ItemCategoryID`,
     title: 'Item Sales Report',
     description: 'Which items sell the most, how much money they bring in, and how often they come back.',
     orderBy: 'UnitsSold DESC',
@@ -74,30 +81,16 @@ const REPORTS = {
       from: { column: 'LastOrderDate', op: '>=' },
       to: { column: 'LastOrderDate', op: '<=' }
     }
-  },
-  EmployeeProductivity: {
-    title: 'Employee Productivity Report',
-    description: 'Hours each employee has worked compared to how much they sold.',
-    orderBy: 'SalesPerHour DESC',
-    summary: [
-      { label: 'Employees', sql: 'COUNT(*)' },
-      { label: 'Total Hours', sql: 'SUM(HoursWorked)' },
-      { label: 'Total Sales', sql: 'SUM(TotalSales)', money: true },
-      { label: 'Sales Per Hour', sql: 'SUM(TotalSales) / NULLIF(SUM(HoursWorked), 0)', money: true }
-    ],
-    filters: {
-      employee: { column: 'EmployeeName', op: 'LIKE' },
-      department: { column: 'Department', op: '=' },
-      minHours: { column: 'HoursWorked', op: '>=' },
-      minPerHour: { column: 'SalesPerHour', op: '>=' }
-    }
   }
 };
 
 async function findReport(report, filters){
   const reportFilters = REPORTS[report].filters;
   const conditions = [];
-  const params = [report];
+  //reports with a source query read from it; the rest read from their view by name
+  const source = REPORTS[report].source;
+  const from = source ? `(${source}) AS r` : '??';
+  const params = source ? [] : [report];
 
   for (const name in reportFilters) {
     const value = filters[name];
@@ -120,11 +113,11 @@ async function findReport(report, filters){
   if (conditions.length > 0)
     where = ` WHERE ${conditions.join(' AND ')}`;
 
-  const rows = await query(`SELECT * FROM ??${where} ORDER BY ${REPORTS[report].orderBy}`, params);
+  const rows = await query(`SELECT * FROM ${from}${where} ORDER BY ${REPORTS[report].orderBy}`, params);
 
   //turns the summary list into one query like SELECT SUM(TotalSales) AS `Total Revenue`, ...
   const columns = REPORTS[report].summary.map((s) => `${s.sql} AS \`${s.label}\``);
-  const totals = await query(`SELECT ${columns.join(', ')} FROM ??${where}`, params);
+  const totals = await query(`SELECT ${columns.join(', ')} FROM ${from}${where}`, params);
 
   const summary = REPORTS[report].summary.map((s) => ({
     label: s.label,
