@@ -27,13 +27,33 @@ const ProductList = ({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {visibleProducts.map((product) => (
           <div key={product.ItemID} className="min-w-0 border p-4">
+            {/*Show the item picture from the ItemImage link in a square box*/}
+            {product.ItemImage ? (
+              <img
+                src={product.ItemImage}
+                alt={product.ItemName}
+                loading="lazy"
+                className="mb-3 aspect-square w-full rounded bg-white object-contain"
+                onError={function(event){
+                  //Hide a broken link but keep the box so the cards stay the same size
+                  event.currentTarget.style.visibility = "hidden";
+                }}
+              />
+            ) : (
+              <div className="mb-3 aspect-square w-full rounded bg-gray-100" />
+            )}
             <p style={{ textWrap: "wrap", overflowWrap: "anywhere" }}>
               {product.ItemName}
             </p>
             <p>
               ${(Math.round(Number(product.ItemPrice) * 100) / 100).toFixed(2)}
             </p>
-            <p>In stock: {product.Stock ?? "Unavailable"}</p>
+            {/*Show "Out of stock" instead of "In stock: 0"*/}
+            {Number(product.Stock) > 0 ? (
+              <p>In stock: {product.Stock}</p>
+            ) : (
+              <p className="font-medium text-red-700">Out of stock</p>
+            )}
             <button
               type="button"
               disabled={!canAddOne(product.ItemID)}

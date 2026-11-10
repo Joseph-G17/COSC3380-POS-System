@@ -13,6 +13,29 @@ function CustomerLoginPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  //Ask the staff login when the customer login says no
+  async function staffLogIn(){
+    const response = await fetch("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: username, password: password }),
+    });
+    const staff = await response.json();
+
+    if(!response.ok){
+      return false;
+    }
+    //Save the employee the same way the staff pages read it
+    sessionStorage.setItem("saveso-employee", JSON.stringify({ id: staff.employeeID, firstName: staff.firstName, clockedIn: false, department: staff.departmentID, role: staff.Role }));
+    //Role 0 is a cashier, the other roles use the admin pages
+    if(staff.Role === 0){
+      navigate("/cashier");
+    }else{
+      navigate("/admin");
+    }
+    return true;
+  }
+
   async function logIn(event) {
     event.preventDefault();
     if (isSubmitting) return;
@@ -27,7 +50,14 @@ function CustomerLoginPage() {
       });
       const data = await response.json();
 
-      if (!response.ok) {
+      if(response.status === 401){
+        //Not a customer, so try the staff login before showing an error
+        const isStaff = await staffLogIn();
+        if(isStaff){
+          return;
+        }
+        setErrorMessage("Invalid username or password.");
+      }else if(!response.ok){
         setErrorMessage(data.message || "Unable to log in. Please try again.");
       } else if (!data.customer || !data.customer.customerID ||
                  typeof data.customer.firstName !== "string") {
@@ -53,22 +83,21 @@ function CustomerLoginPage() {
         </a>
 
         <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-8">
-          <h1 className="text-wrap! text-3xl font-light">Customer login</h1>
-          <p className="mt-2 text-wrap! text-sm text-gray-600">Log in to your SaveSo customer account.</p>
+          <h1 className="text-wrap! text-3xl font-light">Log in</h1>
 
           <form onSubmit={logIn} className="mt-6 space-y-5" aria-busy={isSubmitting}>
             <div>
               <label htmlFor="customer-username" className="mb-2 block text-sm font-medium">Username</label>
               <input id="customer-username" name="username" value={username}
                 onChange={(event) => setUsername(event.target.value)}
-                minLength={3} maxLength={30} autoComplete="username" autoCapitalize="none"
+                maxLength={30} autoComplete="username" autoCapitalize="none"
                 spellCheck={false} autoFocus required disabled={isSubmitting} className={inputStyle} />
             </div>
             <div>
               <label htmlFor="customer-password" className="mb-2 block text-sm font-medium">Password</label>
               <input id="customer-password" name="password" type="password" value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                minLength={8} maxLength={128} autoComplete="current-password"
+                maxLength={128} autoComplete="current-password"
                 required disabled={isSubmitting} className={inputStyle} />
             </div>
 
@@ -81,9 +110,6 @@ function CustomerLoginPage() {
 
           <p className="mt-5 text-wrap! text-center text-sm">
             New to SaveSo? <Link to={customerFormUrl("/customer/signup", next)} className="font-medium text-green-900 underline">Create an account</Link>
-          </p>
-          <p className="mt-6 border-t border-gray-200 pt-5 text-center text-sm">
-            <a href="/login" className="inline-flex min-h-11 items-center text-gray-700 underline">Log in as staff member</a>
           </p>
         </section>
 

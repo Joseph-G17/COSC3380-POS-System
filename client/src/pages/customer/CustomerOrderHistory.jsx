@@ -11,6 +11,10 @@ function OrderList({ orders }) {
           <details>
             <summary className="cursor-pointer py-2 text-wrap!">
               <strong>Order #{order.orderId}</strong> · {order.orderType} · {currency.format(order.total)}
+              {/*Show if the order went through or was canceled*/}
+              <span className={order.orderStatus === "Canceled" ? "ml-2 font-medium text-red-700" : "ml-2 text-green-800"}>
+                {order.orderStatus}
+              </span>
               <time className="ml-2 text-sm text-gray-600" dateTime={order.orderDate.replace(" ", "T")}>
                 {order.orderDate}
               </time>
@@ -26,6 +30,9 @@ function OrderList({ orders }) {
             </ul>
             {order.deliveryAddress && (
               <p className="mt-2 text-sm text-gray-600 text-wrap!">Delivery to {order.deliveryAddress}</p>
+            )}
+            {order.canceledDate && (
+              <p className="mt-2 text-sm text-red-700 text-wrap!">Canceled on {order.canceledDate}</p>
             )}
             {order.discountCode && (
               <p className="mt-2 text-sm text-gray-600 text-wrap!">Discount {order.discountCode} ({order.discountPercent}% off)</p>
