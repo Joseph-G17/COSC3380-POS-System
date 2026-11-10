@@ -7,6 +7,15 @@ const formatPrice = (priceInCents) => new Intl.NumberFormat('en-US', {
 
 const getItemName = (item) => item.ItemName || item.ItemDescription || `Item ${item.ItemID}`;
 
+const getCashierEmployeeId = () => {
+  try {
+    const employee = JSON.parse(sessionStorage.getItem('saveso-employee'));
+    return employee?.id ? String(employee.id) : '';
+  } catch {
+    return '';
+  }
+};
+
 const CashierCheckout = () => {
   const [items, setItems] = useState([]);
   const [discounts, setDiscounts] = useState([]);
@@ -18,9 +27,7 @@ const CashierCheckout = () => {
   const [discountsError, setDiscountsError] = useState('');
   const [areDiscountsLoading, setAreDiscountsLoading] = useState(true);
   const [customerId, setCustomerId] = useState('');
-  const [employeeId] = useState(
-    () => sessionStorage.getItem('employeeID') ?? ''
-  );
+  const [employeeId] = useState(getCashierEmployeeId);
   const [paymentMethod, setPaymentMethod] = useState('Cash');
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -327,13 +334,13 @@ const CashierCheckout = () => {
               Apply a discount code
             </h3>
             <label className="sr-only" htmlFor="discount-search">
-              Search discounts by code or item ID
+              Discount code
             </label>
             <input
               className="w-full rounded border px-3 py-2"
               id="discount-search"
-              type="search"
-              placeholder="Search discount code or item ID"
+              type="text"
+              placeholder="Enter discount code"
               value={discountSearch}
               onChange={(event) => {
                 setDiscountSearch(event.target.value);
