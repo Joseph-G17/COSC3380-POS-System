@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Route, createBrowserRouter, createRoutesFromElements, RouterProvider, Navigate  } from 'react-router-dom'
 
-import LoginLayout from './layouts/LoginLayout'
 import CustomerLoginPage from './pages/customer/CustomerLoginPage';
 import CustomerSignupPage from './pages/customer/CustomerSignupPage';
 import CustomerProfilePage from './pages/customer/CustomerProfilePage';
@@ -40,11 +39,11 @@ const App = () => {
           <Route path='customer/profile' element={<CustomerProfilePage />} />
         </Route>
 
-        {/* Store Login/Sign Up opens customer forms; their staff link continues to /login. */}
+        {/*Customers and staff log in on the same page*/}
         <Route path='/customer/login' element={<CustomerLoginPage />} />
         <Route path='/customer/signup' element={<CustomerSignupPage />} />
-        {/* Keep this staff URL and its employee login handler compatible with the team's links. */}
-        <Route path='/login' element={<LoginLayout />} />
+        {/*Staff pages still send people to /login, so it opens the same page*/}
+        <Route path='/login' element={<CustomerLoginPage />} />
 
         {/* Preserve the existing admin layout and its default page. */}
         <Route path='/admin' element={<AdminLayout /> }>
