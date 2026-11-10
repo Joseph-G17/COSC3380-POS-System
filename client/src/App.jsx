@@ -1,15 +1,18 @@
+import { useState } from 'react';
 import { Route, createBrowserRouter, createRoutesFromElements, RouterProvider, Navigate  } from 'react-router-dom'
 
 import LoginLayout from './layouts/LoginLayout'
 import CustomerLoginPage from './pages/customer/CustomerLoginPage';
 import CustomerSignupPage from './pages/customer/CustomerSignupPage';
+import CustomerProfilePage from './pages/customer/CustomerProfilePage';
 
-import AdminMainLayout from './layouts/AdminMainLayout';
+import AdminLayout from './layouts/AdminLayout';
 import HomePage from './pages/admin/HomePage';
 import ReportsPage from './pages/admin/ReportsPage';
 import ClockInPage from './pages/admin/ClockInPage';
 import EditProfilePage from './pages/admin/EditProfilePage';
 import InspectDataPage from './pages/admin/InspectDataPage';
+
 
 // Public shop and checkout share one cart; customer forms open on separate routes.
 import OnlineStoreLayout from './layouts/OnlineStoreLayout'; // Holds the shared customer cart and navigation.
@@ -34,6 +37,7 @@ const App = () => {
           <Route index element={<OnlineStorePage />} />
           {/* This child opens /checkout inside Layout; F5 restores its cart from this tab's saved data. */}
           <Route path='checkout' element={<CheckoutPage />} />
+          <Route path='customer/profile' element={<CustomerProfilePage />} />
         </Route>
 
         {/* Store Login/Sign Up opens customer forms; their staff link continues to /login. */}
@@ -43,14 +47,14 @@ const App = () => {
         <Route path='/login' element={<LoginLayout />} />
 
         {/* Preserve the existing admin layout and its default page. */}
-        <Route path='/admin' element={<AdminMainLayout /> }>
+        <Route path='/admin' element={<AdminLayout /> }>
           <Route index element={<Navigate to="manage/Employees" replace />} />
           <Route path='inspectData/:entity/:id' element={<InspectDataPage />}/>
           <Route path='manage/:entity' element={<HomePage /> } />
           <Route path='reports/:report' element={<ReportsPage />}/>
-          <Route path='clock-in/:user' element={<ClockInPage />}/>
-          <Route path='profile/:user' element={<EditProfilePage />}/>
+          <Route path='clock-in' element={<ClockInPage />}/>
         </Route>
+
         
         <Route path='/cashier' element={<CashierMainLayout />}>
           <Route index element={<CashierCheckout />} />

@@ -1,8 +1,9 @@
 const http = require('http');
 
-const { getEmployeeLogin } = require('./controllers/employeesController')
+const { getEmployeeLogin, updateEmployeeHours, getLoginInfo, updateLoginInfo } = require('./controllers/employeesController')
 const { getEntities, getEntity, updateEntity, deleteEntity, getEntityColumns, createEntity } = require('./controllers/universalController');
 const { getReport } = require('./controllers/reportsController')
+const { getNotifications } = require('./controllers/notificationsController')
 
 //cashier:
 const {adjustItemStock, createOrder, loginEmployee, getItems } = require('./controllers/itemController');
@@ -13,26 +14,32 @@ const { getCategories } = require('./controllers/categoriesController');
 const {
   signupCustomer,
   loginCustomer,
+  updateProfile,
 } = require('./controllers/customerController');
 
-// The customer forms use these two POST URLs; /api/login remains the staff route.
+const { getOrderHistory, placeOnlineOrder, checkDiscount } = require('./controllers/customerOrderController');
+
 const customerRoutes = {
-  '/api/customer/signup': { method: 'POST', handle: signupCustomer },
-  '/api/customer/login': { method: 'POST', handle: loginCustomer },
+  '/api/customer/signup': { POST: signupCustomer },
+  '/api/customer/login': { POST: loginCustomer },
+  '/api/customer/orders': { GET: getOrderHistory, POST: placeOnlineOrder },
+  '/api/customer/discount': { GET: checkDiscount },
+  '/api/customer/profile': { PUT: updateProfile },
 };
+
 
 const handler = (req, res) => {
   const incoming = new URL(req.url, 'http://localhost');
   const path = incoming.searchParams.get('path');
   if (path !== null) {
     incoming.searchParams.delete('path');
-    const rest = incoming.searchParams.toString();
-    req.url = '/api/' + path + (rest ? '?' + rest : '');
+    const rest = incoming.searchParams.toString();  
+    req.url = '/api/' + path + (rest ? '?' + rest : ''); // change req.url if rest of url exists after path: /api/products?rest or /api/products
   }
 
-  try {
+  try { //keeps spaced strings readable as url's after ?
     const [pathname, search] = req.url.split('?');
-    req.url = decodeURIComponent(pathname) + (search ? '?' + search : '');
+    req.url = decodeURIComponent(pathname) + (search ? '?' + search : ''); //if search space exists in type add it if not don't add anything
   } catch (error) {
     res.writeHead(400, {'Content-Type': 'application/json'});
     return res.end(JSON.stringify({message: 'Bad URL'}));
@@ -42,20 +49,20 @@ const handler = (req, res) => {
   const customerRoute = customerRoutes[req.url.split('?')[0]];
   if (customerRoute) {
     res.setHeader('Cache-Control', 'no-store');
-    // Tell the browser that these form routes require POST.
-    if (req.method !== customerRoute.method) {
+    if (!Object.hasOwn(customerRoute, req.method)) {
       res.writeHead(405, {
         'Content-Type': 'application/json',
-        Allow: customerRoute.method,
+        Allow: Object.keys(customerRoute).join(', '),
       });
       return res.end(JSON.stringify({ message: 'Method not allowed' }));
     }
-    return customerRoute.handle(req, res);
+    return customerRoute[req.method](req, res);
   }
 
   if(req.url === '/api/login' && req.method === 'POST'){
     getEmployeeLogin(req, res);
   }
+
   else if(req.url.split('?')[0] === '/api/orders' && req.method === 'POST'){
     createOrder(req, res);
   }
@@ -64,7 +71,22 @@ const handler = (req, res) => {
   }
   else if(req.url.split('?')[0].match(/^\/api\/Items\/([0-9]+)\/stock$/) && req.method === 'POST'){
     const [, id] = req.url.split('?')[0].match(/^\/api\/Items\/([0-9]+)\/stock$/);
-    adjustItemStock(req, res, id);
+    adjustItemStock(req, res, id);}
+
+  else if(req.url === '/api/employee-hours' && req.method === 'PUT'){
+    updateEmployeeHours(req, res);
+  }
+  else if(req.url.match(/^\/api\/employee-login\/([0-9]+)$/) && req.method === 'GET'){
+    const id = req.url.split('/')[3]; // ['', 'api', 'employee-login', '1']
+    getLoginInfo(req, res, id);
+  }
+  else if(req.url === '/api/employee-login' && req.method === 'PUT'){
+    updateLoginInfo(req, res);
+  }
+  //has to be above the universal routes or it gets read as an entity
+  else if(req.url === '/api/notifications' && req.method === 'GET'){
+    getNotifications(req, res);
+
   }
   // ProductList and Sidebar need these customer APIs before generic table matching.
   else if(req.url === '/api/products' && req.method === 'GET'){
@@ -77,6 +99,7 @@ const handler = (req, res) => {
     // AnnouncementBar keeps its lowercase URL; use the shared controller's Sales entity.
     getEntities(req, res, 'Sales');
   }
+  //BELOW IS UNIVERSAL
   else if(req.url.match(/^\/api\/([A-Za-z ]+)$/) && req.method === 'GET'){
     const entity = req.url.split('/')[2];
     getEntities(req, res, entity);

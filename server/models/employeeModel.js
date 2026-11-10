@@ -14,8 +14,30 @@ function findAll(){
 }
 
 function findEmployeeLogin(username){
-  const sql = 'SELECT l.employeeID, l.employeePassword, e.Role FROM \`Employee Logins\` as l JOIN Employees as e ON e.employeeID = l.employeeID WHERE l.employeeUsername = ?'
+  const sql = 'SELECT l.employeeID, l.employeePassword, e.Role, e.firstName, e.departmentID FROM \`Employee Logins\` as l JOIN Employees as e ON e.employeeID = l.employeeID WHERE l.employeeUsername = ?'
   return query(sql, username);
+}
+
+//only the username, the password never leaves the server
+function findLoginInfo(id){
+  const sql = 'SELECT EmployeeUsername FROM \`Employee Logins\` WHERE EmployeeID = ?'
+  return query(sql, [id]);
+}
+
+function createLogin(id, username, password){
+  const sql = 'INSERT INTO \`Employee Logins\` (EmployeeID, EmployeeUsername, EmployeePassword) VALUES (?,?,?)'
+  return query(sql, [id, username, password]);
+}
+
+function updateLogin(id, changes){
+  const sql = 'UPDATE \`Employee Logins\` SET ? WHERE EmployeeID = ?'
+  return query(sql, [changes, id]);
+}
+
+function updateHours(id, hoursWorked){
+  const sql = `UPDATE ?? SET hoursWorked = hoursWorked + ? WHERE EmployeeID = ?`
+  const params = ['employee hours', hoursWorked, id];
+  return query(sql, params);
 }
 
 //INSERT INTO
@@ -48,6 +70,10 @@ function remove(id) {
 module.exports = {
   findAll,
   findEmployeeLogin,
+  findLoginInfo,
+  createLogin,
+  updateLogin,
+  updateHours,
   create,
   update,
   remove

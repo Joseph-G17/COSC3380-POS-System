@@ -31,3 +31,22 @@ button:hover {
     outline: none;
 }
 
+
+/*when printing a report hide the sidebar, nav bar and filters*/
+@media print {
+    aside, nav, .no-print {
+        display: none !important;
+    }
+    .report-page {
+        grid-column: 1 / -1;
+        border: none;
+    }
+    /*let the whole report print instead of just what fits on screen*/
+    .admin-layout {
+        height: auto;
+    }
+    .admin-main {
+        grid-column: 1 / -1;
+        overflow: visible;
+    }
+}

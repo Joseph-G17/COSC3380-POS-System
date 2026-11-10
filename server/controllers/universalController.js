@@ -1,7 +1,7 @@
 const Universal = require('../models/universalModel');
 const { getPostData } = require('../utilities');
 
-const ENTITIES = ['Employees', 'Orders', 'Items', 'Item Categories', 'Discounts', 'Sales', 'Departments', 'Returns', 'Inventory', 'Customers'];
+const ENTITIES = ['Employees', 'Orders', 'Items', 'Item Categories', 'Discounts', 'Sales', 'Departments', 'Returns', 'Inventory', 'Customers', 'Employee Hours', 'Shipments'];
 
 // desc: Gets all rows of any entity
 // route: GET /api/:entity

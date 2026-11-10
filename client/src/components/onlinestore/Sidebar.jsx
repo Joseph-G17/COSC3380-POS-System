@@ -1,6 +1,5 @@
 import { useState } from "react";
 
-// Page supplies category rows and forwards Layout's shared filter actions.
 const Sidebar = ({
   categories,
   selectedCategoryIds,
@@ -9,12 +8,10 @@ const Sidebar = ({
   categoriesLoading,
   categoriesError,
 }) => {
-  // Keep panel visibility local; opening Shop does not change filters or the cart.
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="shrink-0">
-      {/* Keep Shop available when the category panel is closed. */}
+    <div className="w-full shrink-0 md:w-auto">
       <button
         type="button"
         onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -30,18 +27,17 @@ const Sidebar = ({
         id="customer-categories"
         className={
           sidebarOpen
-            ? "w-56 overflow-hidden transition-all duration-300 motion-reduce:transition-none"
-            : "w-0 overflow-hidden transition-all duration-300 motion-reduce:transition-none"
+            ? "w-full overflow-hidden md:w-56 md:transition-all md:duration-300 motion-reduce:transition-none"
+            : "hidden overflow-hidden md:block md:w-0 md:transition-all md:duration-300 motion-reduce:transition-none"
         }
         inert={!sidebarOpen}
       >
-        <aside className="w-56 border-r p-4" aria-label="Product categories">
+        <aside className="max-h-[50dvh] w-full overflow-y-auto overscroll-contain border-y p-4 md:max-h-[80dvh] md:w-56 md:overflow-y-auto md:border-y-0 md:border-r" aria-label="Product categories">
           <fieldset className="min-w-0">
             {/* Allow long category names to wrap despite the global no-wrap rule. */}
             <legend className="font-medium" style={{ textWrap: "wrap", overflowWrap: "anywhere" }}>
               Categories
             </legend>
-            {/* Clear category selection without clearing the search text. */}
             <button
               type="button"
               onClick={onClearCategories}
@@ -51,7 +47,6 @@ const Sidebar = ({
               All categories
             </button>
 
-            {/* Show loading, request failure, or an empty category list. */}
             {categoriesLoading && (
               <p className="mt-3 text-sm text-gray-600" role="status" style={{ textWrap: "wrap", overflowWrap: "anywhere" }}>
                 Loading categories...
@@ -70,9 +65,7 @@ const Sidebar = ({
 
             {!categoriesLoading && !categoriesError && categories.length > 0 && (
               <div className="mt-2">
-                {/* Each checkbox sends its category ID back to Layout. */}
                 {categories.map(function (category) {
-                  // Store and compare category IDs as strings.
                   const categoryId = String(category.ItemCategoryID);
 
                   return (

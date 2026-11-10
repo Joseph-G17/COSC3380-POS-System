@@ -144,7 +144,15 @@ async function adjustItemStock(id, change) {
   return rows[0].Stock;
 }
 
-async function createOrder({ employeeId, customerId, paymentMethod, items }) {
+// The Azure database clock is UTC, so orders save Houston time instead.
+function houstonNow() {
+  // sv-SE prints "YYYY-MM-DD HH:mm:ss", the format MySQL expects.
+  return new Date().toLocaleString('sv-SE', { timeZone: 'America/Chicago' });
+}
+
+async function createOrder({ employeeId, customerId, paymentMethod, items, orderType = 'In-Store',
+  deliveryAddress = null, discountCode = null }) {
+  const onlineOrder = orderType === 'Pickup' || orderType === 'Delivery';
   const connection = await getConnection();
   const runQuery = (sql, params = []) => new Promise((resolve, reject) => {
     connection.query(sql, params, (error, results) => {
@@ -158,18 +166,9 @@ async function createOrder({ employeeId, customerId, paymentMethod, items }) {
       connection.beginTransaction((error) => error ? reject(error) : resolve());
     });
 
-    const employees = await runQuery(
-      'SELECT `EmployeeID` FROM `Employees` WHERE `EmployeeID` = ?',
-      [employeeId]
-    );
-    if (employees.length === 0) {
-      const error = new Error('Cashier employee ID was not found');
-      error.statusCode = 404;
-      throw error;
-    }
-
+    // Make sure the customer exists before saving the order.
     const customers = await runQuery(
-      'SELECT `CustomerID` FROM `Customers` WHERE `CustomerID` = ?',
+      'SELECT CustomerID FROM Customers WHERE CustomerID = ?',
       [customerId]
     );
     if (customers.length === 0) {
@@ -179,6 +178,13 @@ async function createOrder({ employeeId, customerId, paymentMethod, items }) {
     }
 
     const sortedItems = [...items].sort((left, right) => left.itemId - right.itemId);
+    const employees = await runQuery('SELECT EmployeeID FROM Employees WHERE EmployeeID = ?', [employeeId]);
+    if (employees.length === 0) {
+      const error = new Error(onlineOrder ? 'Online checkout is unavailable. Please contact the store.' : 'Cashier employee ID was not found');
+      error.statusCode = onlineOrder ? 503 : 404;
+      throw error;
+    }
+
     const itemPlaceholders = sortedItems.map(() => '?').join(', ');
     const itemRows = await runQuery(
       `SELECT \`ItemID\`, \`ItemPrice\` FROM \`Items\` WHERE \`ItemID\` IN (${itemPlaceholders}) ORDER BY \`ItemID\` FOR UPDATE`,
@@ -211,6 +217,35 @@ async function createOrder({ employeeId, customerId, paymentMethod, items }) {
       throw error;
     }
 
+    //Welcome discount: each customer can use a code only once
+    //Find the code first, then look for it in this customer's past orders
+    let discountId = null;
+    if(discountCode !== null){
+      const discounts = await runQuery(
+        'SELECT DiscountID, DiscountPercent FROM Discounts WHERE DiscountCode = ?',
+        [discountCode]
+      );
+      if(discounts.length === 0){
+        const error = new Error('The discount code is invalid');
+        error.statusCode = 400;
+        throw error;
+      }
+      discountId = discounts[0].DiscountID;
+      const usedOrders = await runQuery(
+        'SELECT OrderID FROM Orders WHERE CustomerID = ? AND DiscountID = ?',
+        [customerId, discountId]
+      );
+      if(usedOrders.length > 0){
+        const error = new Error('You have used this code before');
+        error.statusCode = 409;
+        throw error;
+      }
+
+      //Take the percent off the whole order
+      //Money stays in cents to avoid decimal errors
+      totalInCents = Math.round(totalInCents * (100 - discounts[0].DiscountPercent) / 100);
+    }
+
     const inventoryRows = await runQuery(
       `SELECT \`InventoryID\`, \`ItemID\`, \`Stock\` FROM \`Inventory\` WHERE \`ItemID\` IN (${itemPlaceholders}) ORDER BY \`ItemID\`, \`InventoryID\` FOR UPDATE`,
       sortedItems.map((item) => item.itemId)
@@ -223,17 +258,44 @@ async function createOrder({ employeeId, customerId, paymentMethod, items }) {
       inventoryByItemId.set(itemId, itemInventory);
     }
 
+    const fields = { EmployeeID: employeeId, CustomerID: customerId, OrderType: orderType,
+      OrderTotal: (totalInCents / 100).toFixed(2), PaymentMethod: paymentMethod };
+    //Delivery: save the typed address in Addresses first, then link it to the order
+    if(orderType === 'Delivery'){
+      const address = await runQuery('INSERT INTO Addresses (CustomerID, Address, AddressType) VALUES (?, ?, ?)', [customerId, deliveryAddress, 'Shipping']);
+      fields.ShippingAddressID = address.insertId;
+    }
+    //Save the code on the order, so the next order knows it was used
+    if(discountId !== null){
+      fields.DiscountID = discountId;
+    }
+    fields.OrderDate = houstonNow();
+    const orderResult = await runQuery('INSERT INTO `Orders` SET ?', [fields]);
+
     for (const item of orderItems) {
       const itemInventory = inventoryByItemId.get(item.itemId) ?? [];
-      let available = itemInventory.reduce((sum, row) => sum + Number(row.Stock), 0);
+      const available = itemInventory.reduce((sum, row) => sum + Number(row.Stock), 0);
       if (available < item.quantity) {
         const error = new Error(`Insufficient stock for item ${item.itemId}`);
         error.statusCode = 409;
         throw error;
       }
 
+      await runQuery(
+        'INSERT INTO `Ordered Items` (`OrderID`, `ItemID`, `QuantityOrdered`, `ItemPrice`) VALUES (?, ?, ?, ?)',
+        [orderResult.insertId, item.itemId, item.quantity, (item.priceInCents / 100).toFixed(2)]
+      );
+
+      // A database trigger may have already deducted the line. Count it just once.
+      const currentLots = await runQuery(
+        'SELECT InventoryID, Stock FROM Inventory WHERE ItemID = ? ORDER BY InventoryID FOR UPDATE', [item.itemId]
+      );
+      const stockAfterLine = currentLots.reduce((sum, lot) => sum + Number(lot.Stock), 0);
+      if (stockAfterLine === available - item.quantity) continue;
+      if (stockAfterLine !== available) throw new Error('Unexpected stock change while placing the order');
+
       let remaining = item.quantity;
-      for (const inventory of itemInventory) {
+      for (const inventory of currentLots) {
         if (remaining === 0) break;
         const decrement = Math.min(remaining, Number(inventory.Stock));
         if (decrement === 0) continue;
@@ -246,18 +308,6 @@ async function createOrder({ employeeId, customerId, paymentMethod, items }) {
       }
     }
 
-    const orderResult = await runQuery(
-      'INSERT INTO `Orders` (`EmployeeID`, `CustomerID`, `OrderType`, `OrderTotal`, `PaymentMethod`, `OrderDate`) VALUES (?, ?, ?, ?, ?, NOW())',
-      [employeeId, customerId, 'In-Store', (totalInCents / 100).toFixed(2), paymentMethod]
-    );
-
-    for (const item of orderItems) {
-      await runQuery(
-        'INSERT INTO `Ordered Items` (`OrderID`, `ItemID`, `QuantityOrdered`, `ItemPrice`) VALUES (?, ?, ?, ?)',
-        [orderResult.insertId, item.itemId, item.quantity, (item.priceInCents / 100).toFixed(2)]
-      );
-    }
-
     await new Promise((resolve, reject) => {
       connection.commit((error) => error ? reject(error) : resolve());
     });
@@ -265,7 +315,8 @@ async function createOrder({ employeeId, customerId, paymentMethod, items }) {
     return {
       OrderID: orderResult.insertId,
       CustomerID: customerId,
-      OrderTotal: (totalInCents / 100).toFixed(2)
+      OrderTotal: fields.OrderTotal,
+      ...(onlineOrder ? { orderType, deliveryAddress, paymentMethod } : {}),
     };
   } catch (error) {
     try {

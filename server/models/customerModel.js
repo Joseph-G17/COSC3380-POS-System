@@ -1,9 +1,8 @@
 const { query, withTransaction } = require('../sqlConnecter');
 
-// Both account queries return these names for the frontend; dates are formatted in SQL.
 const PUBLIC_CUSTOMER_SELECT = `
   SELECT c.CustomerID AS customerID, c.FirstName AS firstName,
-         c.LastName AS lastName, c.Email AS email,
+         c.LastName AS lastName, c.Email AS email, c.PhoneNumber AS phoneNumber,
          l.CustomerUsername AS username,
          DATE_FORMAT(c.MembershipExpirationDate, '%Y-%m-%dT%H:%i:%s.000Z')
            AS membershipExpirationDate
@@ -11,11 +10,10 @@ const PUBLIC_CUSTOMER_SELECT = `
   JOIN \`Customer Logins\` l ON l.CustomerID = c.CustomerID`;
 
 async function findCustomerLogin(username) {
-  // loginCustomer supplies the username. The ? value is passed separately from SQL.
   // storedPassword is used for comparison and is excluded from API replies.
   const sql = `
     SELECT c.CustomerID AS customerID, c.FirstName AS firstName,
-           c.LastName AS lastName, c.Email AS email,
+           c.LastName AS lastName, c.Email AS email, c.PhoneNumber AS phoneNumber,
            l.CustomerUsername AS username,
            DATE_FORMAT(c.MembershipExpirationDate, '%Y-%m-%dT%H:%i:%s.000Z')
              AS membershipExpirationDate,
@@ -28,8 +26,7 @@ async function findCustomerLogin(username) {
 }
 
 async function createCustomer(data) {
-  // signupCustomer supplies validated fields; the callback saves both linked rows together.
-  // A failed login insert also rolls back the new Customers row.
+  // Roll back the customer row if the login row cannot be saved.
   return withTransaction(async (runQuery) => {
     // The database sets one year of membership; the form cannot choose its expiry.
     const created = await runQuery(
@@ -44,13 +41,83 @@ async function createCustomer(data) {
         'VALUES (?, ?, ?)',
       [created.insertId, data.username, data.password],
     );
-    // Read the saved public details using the new customer ID, then return them.
     const rows = await runQuery(
       PUBLIC_CUSTOMER_SELECT + ' WHERE c.CustomerID = ? LIMIT 1',
       [created.insertId],
     );
-    return rows[0];
+    return rows[0] || null;
   });
 }
 
-module.exports = { findCustomerLogin, createCustomer };
+//Save the new profile info, then read the customer again to send back
+async function updateCustomer(customerId, data){
+  return withTransaction(async (runQuery) => {
+    const updated = await runQuery('UPDATE Customers SET FirstName = ?, LastName = ?, Email = ?, PhoneNumber = ? WHERE CustomerID = ?', [data.firstName, data.lastName, data.email, data.phoneNumber, customerId]);
+
+    await runQuery('UPDATE `Customer Logins` SET CustomerUsername = ? WHERE CustomerID = ?', [data.username, customerId]);
+
+    const reRead = await runQuery(PUBLIC_CUSTOMER_SELECT + ' WHERE c.CustomerID = ? LIMIT 1', [customerId]);
+
+    return reRead[0] || null;
+  });
+}
+
+// Read the order total and unit prices saved at checkout. Today's catalog prices may differ.
+async function getCustomerOrderHistory(customerId) {
+  const rows = await query(`
+    SELECT CAST(o.OrderID AS CHAR) AS orderId,
+           DATE_FORMAT(o.OrderDate, '%Y-%m-%d %H:%i:%s') AS orderDate,
+           o.OrderType AS orderType, o.OrderTotal AS total,
+           a.Address AS deliveryAddress, d.DiscountCode AS discountCode, d.DiscountPercent AS discountPercent,
+           CAST(oi.ItemID AS CHAR) AS itemId, i.ItemName AS name,
+           oi.QuantityOrdered AS quantity, oi.ItemPrice AS unitPrice
+    FROM Orders o
+    LEFT JOIN \`Ordered Items\` oi ON oi.OrderID = o.OrderID
+    LEFT JOIN Addresses a ON a.AddressID = o.ShippingAddressID
+    LEFT JOIN Discounts d ON d.DiscountID = o.DiscountID
+    LEFT JOIN Items i ON i.ItemID = oi.ItemID
+    WHERE o.CustomerID = ?
+    ORDER BY o.OrderDate DESC, o.OrderID DESC, oi.ItemID`, [customerId]);
+
+  const orders = [];
+  let order;
+  for (const row of rows) {
+    // The query puts every item from the same order next to the others.
+    if (!order || order.orderId !== row.orderId) {
+      order = {
+        orderId: row.orderId, orderDate: row.orderDate, orderType: row.orderType,
+        total: Number(row.total), deliveryAddress: row.deliveryAddress,
+        discountCode: row.discountCode, discountPercent: row.discountPercent, items: [],
+      };
+      orders.push(order);
+    }
+    if (row.itemId !== null) {
+      order.items.push({
+        itemId: row.itemId, name: row.name,
+        quantity: row.quantity, unitPrice: Number(row.unitPrice),
+      });
+    }
+  }
+  return orders;
+}
+
+//Check a discount code for one customer before checkout
+async function checkDiscountCode(customerId, discountCode){
+  const discounts = await query('SELECT DiscountID, DiscountCode, DiscountPercent FROM Discounts WHERE DiscountCode = ?', [discountCode]);
+  if(discounts.length === 0){
+    const error = new Error('The discount code is invalid.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const usedOrders = await query('SELECT OrderID FROM Orders WHERE CustomerID = ? AND DiscountID = ?', [customerId, discounts[0].DiscountID]);
+
+  if(usedOrders.length > 0){
+    const error = new Error('You have used this code before.');
+    error.statusCode = 409;
+    throw error;
+  }
+  return { discountCode: discounts[0].DiscountCode, discountPercent: discounts[0].DiscountPercent };
+}
+
+module.exports = { findCustomerLogin, createCustomer, getCustomerOrderHistory, checkDiscountCode, updateCustomer };

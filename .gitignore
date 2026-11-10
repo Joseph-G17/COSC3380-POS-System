@@ -9,3 +9,4 @@ server/postman
 .vscode/settings.json
 /.vscode
 .vscode/settings.json
+/server/database/online-checkout.sql
