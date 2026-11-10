@@ -1,6 +1,7 @@
 import { Link, useOutletContext } from "react-router-dom";
 import { loadCustomer } from "../customer/customerSession";
 import { useState } from "react";
+import { estimatedDelivery } from "../customer/deliveryEstimate";
 
 function money(cents) {
   return "$" + (cents / 100).toFixed(2);
@@ -218,6 +219,10 @@ function CheckoutPage() {
               ? "Delivery to " + receipt.deliveryAddress
               : "Pickup at the store."}
           </p>
+          {/*Delivery orders arrive the next day*/}
+          {receipt.orderType === "Delivery" && (
+            <p className="mt-1">Estimated delivery: {estimatedDelivery()}</p>
+          )}
           <Link
             to="/customer/profile"
             className="mt-2 inline-block text-green-900 underline"
