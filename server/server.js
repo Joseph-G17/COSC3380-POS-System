@@ -3,6 +3,7 @@ const http = require('http');
 const { getEmployeeLogin, updateEmployeeHours, getLoginInfo, updateLoginInfo } = require('./controllers/employeesController')
 const { getEntities, getEntity, updateEntity, deleteEntity, getEntityColumns, createEntity } = require('./controllers/universalController');
 const { getReport } = require('./controllers/reportsController')
+const { deleteDepartment } = require('./controllers/departmentsController')
 const { getNotifications } = require('./controllers/notificationsController')
 
 //cashier:
@@ -119,6 +120,11 @@ const handler = (req, res) => {
   else if(req.url.match(/^\/api\/([A-Za-z ]+)\/([0-9]+)$/) && req.method === 'PUT'){
     const [, , entity, id] = req.url.split('/'); // ['', 'api', 'Employees', '1']
     updateEntity(req, res, entity, id);
+  }
+  else if(req.url.match(/^\/api\/Departments\/([0-9]+)\?/) && req.method === 'DELETE'){
+    const url = new URL(req.url, 'http://localhost');
+    const id = url.pathname.split('/')[3]; // ['', 'api', 'Departments', '2']
+    deleteDepartment(req, res, id, url.searchParams.get('moveTo'));
   }
   else if(req.url.match(/^\/api\/([A-Za-z ]+)\/([0-9]+)$/) && req.method === 'DELETE'){
     const [, , entity, id] = req.url.split('/'); 

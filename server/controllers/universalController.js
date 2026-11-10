@@ -96,7 +96,15 @@ async function deleteEntity(req, res, entity, id) {
   } catch (error) {
     console.log(error);
 
-    res.writeHead(404, {'Content-Type': 'application/json'});
+    // 1451: another table still points at this row (ON DELETE RESTRICT)
+    if (error.errno === 1451) {
+      res.writeHead(409, {'Content-Type': 'application/json'});
+      return res.end(JSON.stringify({
+        message: `This ${entity} record is still used by other records (orders, hours, employees, etc.) and can't be deleted.`
+      }));
+    }
+
+    res.writeHead(500, {'Content-Type': 'application/json'});
     res.end(JSON.stringify({message: error.sqlMessage || 'Delete failed'}));
   }
 }

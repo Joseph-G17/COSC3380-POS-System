@@ -10,13 +10,6 @@ const FILTERS = {
     { name: 'paymentMethod', label: 'Payment', type: 'select', column: 'PaymentMethod' },
     { name: 'minSales', label: 'Min Total Sales ($)', type: 'number', placeholder: 'e.g. 10' }
   ],
-  EmployeeSales: [
-    { name: 'employee', label: 'Employee', type: 'text', column: 'EmployeeName', placeholder: 'e.g. Sam' },
-    { name: 'department', label: 'Department', type: 'select', column: 'Department' },
-    { name: 'from', label: 'From month', type: 'month' },
-    { name: 'to', label: 'To month', type: 'month' },
-    { name: 'minSales', label: 'Min Total Sales ($)', type: 'number', placeholder: 'e.g. 10' }
-  ],
   ItemPerformance: [
     { name: 'itemName', label: 'Item', type: 'text', column: 'ItemName', placeholder: 'e.g. Milk' },
     { name: 'category', label: 'Category', type: 'select', column: 'Category' },
@@ -30,12 +23,6 @@ const FILTERS = {
     { name: 'minSpent', label: 'Min Total Spent ($)', type: 'number', placeholder: 'e.g. 50' },
     { name: 'from', label: 'Last order from', type: 'date' },
     { name: 'to', label: 'Last order to', type: 'date' }
-  ],
-  EmployeeProductivity: [
-    { name: 'employee', label: 'Employee', type: 'text', column: 'EmployeeName', placeholder: 'e.g. Sam' },
-    { name: 'department', label: 'Department', type: 'select', column: 'Department' },
-    { name: 'minHours', label: 'Hours Worked At Least', type: 'number', placeholder: 'e.g. 10' },
-    { name: 'minPerHour', label: 'Min Sales Per Hour ($)', type: 'number', placeholder: 'e.g. 20' }
   ],
 };
 
@@ -66,12 +53,16 @@ const ReportsPage = () => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [summary, setSummary] = useState([]);
+  const [shown, setShown] = useState(false); //results stay hidden until Apply is clicked
 
-  const loadData = async (currentFilters) => {
+  //show = false loads the report quietly (for the filter dropdowns) without displaying it
+  const loadData = async (currentFilters, show = true) => {
     try{
       if (currentFilters.from && currentFilters.to && currentFilters.from > currentFilters.to) {
         setRows([]);
+        setSummary([]);
         setMessage('"From" must be before "To".');
+        setShown(show);
         return;
       }
 
@@ -97,11 +88,13 @@ const ReportsPage = () => {
       setApplied(count);
       setMessage('');
       setLoaded(true);
+      setShown(show);
     } catch(error){
       console.log(error);
       setRows([]);
       setSummary([]);
       setMessage(error.message);
+      setShown(true); //always show load errors
     }
   }
     
@@ -114,16 +107,19 @@ const ReportsPage = () => {
     setDescription('');
     setApplied(0);
     setLoaded(false);
-    loadData({});
+    setShown(false);
+    loadData({}, false);
   }, [report]);
 
   const handleChange = (name, value) => {
     setFilters({...filters, [name]: value});
   }
 
+  //clear the filters and hide the results until Apply is clicked again
   const handleReset = () => {
     setFilters({});
-    loadData({});
+    setMessage('');
+    setShown(false);
   }
 
   //how many times each value shows up in a column
@@ -148,23 +144,15 @@ const ReportsPage = () => {
     else status = `${applied} filter(s) applied. ${rows.length} of ${allRows.length} rows match.`;
   }
   if (!message && !loaded) status = 'Loading...';
+  if (!shown) status = loaded ? 'Set your filters and click Apply to run the report.' : 'Loading...';
 
   return (
     <section className='report-page border-b border-r'>
       <TitleHeader report={title || niceHeader(report)}/>
       <p className='px-10 -mt-6'>{description}</p>
-      <p className='px-10 text-sm text-gray-500'>Generated {new Date().toLocaleString()}</p>
+      {shown && <p className='px-10 text-sm text-gray-500'>Generated {new Date().toLocaleString()}</p>}
 
-      {/*summary boxes, they change with the filters*/}
-      <div className='flex flex-wrap gap-4 p-4'>
-        {summary.map((s) => (
-          <div key={s.label} className='border-2 p-4 min-w-40'>
-            <p className='text-sm text-gray-500'>{s.label}</p>
-            <p className='text-2xl'>{s.money ? showMoney(s.value) : s.value.toLocaleString()}</p>
-          </div>
-        ))}
-      </div>
-
+      {/*filters come first; nothing below them shows until Apply*/}
       <div className='no-print flex flex-wrap gap-4 p-4'>
         {(FILTERS[report] || []).map((filter) => {
           const counts = filter.column ? getCounts(filter.column) : {};
@@ -216,7 +204,8 @@ const ReportsPage = () => {
         >
           Reset
         </button>
-        <button className='button-highlight p-1 border-2 self-end'
+        <button className='button-highlight p-1 border-2 self-end disabled:opacity-50'
+          disabled={!shown}
           onClick={() => window.print()}
         >
           Print
@@ -224,28 +213,44 @@ const ReportsPage = () => {
       </div>
 
       {status &&
-        <p className={noMatch ? 'p-4 text-red-600' : 'p-4'}>
+        <p className={noMatch || (shown && message) ? 'p-4 text-red-600' : 'p-4'}>
           {status}
         </p>
       }
 
-      <div className='grid'
-        style={{ gridTemplateColumns: `repeat(${headers.length || 1}, minmax(0, 1fr))` }}>
-        {headers.map((h) => (
-          <h2 className='border-b font-bold' key={h}> {niceHeader(h)} </h2>
-        ))}
-      </div>
+      {shown && (
+        <>
+          {/*summary boxes, they change with the filters*/}
+          {summary.length > 0 && (
+            <div className='flex flex-wrap gap-4 px-4 pb-4'>
+              {summary.map((s) => (
+                <div key={s.label} className='border-2 p-4 min-w-40'>
+                  <p className='text-sm text-gray-500'>{s.label}</p>
+                  <p className='text-2xl'>{s.money ? showMoney(s.value) : s.value.toLocaleString()}</p>
+                </div>
+              ))}
+            </div>
+          )}
 
-      <div className='flex-1 overflow-y-auto'>
-        {rows.map((row, i) => (
-          <div key={i} className='grid border-b'
+          <div className='grid'
             style={{ gridTemplateColumns: `repeat(${headers.length || 1}, minmax(0, 1fr))` }}>
             {headers.map((h) => (
-              <p key={h}>{showValue(h, row[h])}</p>
+              <h2 className='border-b font-bold px-3 py-2' key={h}> {niceHeader(h)} </h2>
             ))}
           </div>
-        ))}
-      </div>
+
+          <div className='flex-1 overflow-y-auto'>
+            {rows.map((row, i) => (
+              <div key={i} className='grid border-b'
+                style={{ gridTemplateColumns: `repeat(${headers.length || 1}, minmax(0, 1fr))` }}>
+                {headers.map((h) => (
+                  <p key={h} className='px-3 py-2.5'>{showValue(h, row[h])}</p>
+                ))}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </section>
   )
 }

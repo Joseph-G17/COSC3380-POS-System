@@ -29,21 +29,21 @@ const LIST_QUERIES = {
   Departments: `
     SELECT d.DepartmentID,
            d.DepartmentName,
-           CONCAT(e.FirstName, ' ', e.LastName) AS Manager
+           COALESCE(CONCAT(e.FirstName, ' ', e.LastName), 'Unassigned') AS Manager
     FROM Departments d
-    JOIN Employees e ON e.EmployeeID = d.ManagerID`,
+    LEFT JOIN Employees e ON e.EmployeeID = d.ManagerID`,
 
   Orders: `
     SELECT o.OrderID,
            DATE(o.OrderDate) AS OrderDate,
            CONCAT(c.FirstName, ' ', c.LastName) AS Customer,
-           CONCAT(e.FirstName, ' ', e.LastName) AS Employee,
+           COALESCE(CONCAT(e.FirstName, ' ', e.LastName), 'Former employee') AS Employee,
            o.OrderType,
            o.PaymentMethod,
            o.OrderTotal
     FROM Orders o
     JOIN Customers c ON c.CustomerID = o.CustomerID
-    JOIN Employees e ON e.EmployeeID = o.EmployeeID`,
+    LEFT JOIN Employees e ON e.EmployeeID = o.EmployeeID`,
 
   Items: `
     SELECT i.ItemID,
@@ -61,22 +61,22 @@ const LIST_QUERIES = {
            it.ItemName AS Item,
            inv.Stock,
            inv.CurrentSupplierName AS Supplier,
-           CONCAT(e.FirstName, ' ', e.LastName) AS OrderedBy
+           COALESCE(CONCAT(e.FirstName, ' ', e.LastName), 'Former employee') AS OrderedBy
     FROM Inventory inv
     JOIN Items it ON it.ItemID = inv.ItemID
-    JOIN Employees e ON e.EmployeeID = inv.EmployeeID`,
+    LEFT JOIN Employees e ON e.EmployeeID = inv.EmployeeID`,
 
   Returns: `
     SELECT r.ReturnID,
            r.OrderID AS OrderNumber,
            CONCAT(c.FirstName, ' ', c.LastName) AS Customer,
-           CONCAT(e.FirstName, ' ', e.LastName) AS ProcessedBy,
+           COALESCE(CONCAT(e.FirstName, ' ', e.LastName), 'Former employee') AS ProcessedBy,
            r.ReturnTotal,
            DATE(r.ReturnDate) AS ReturnDate
     FROM Returns r
     JOIN Orders o ON o.OrderID = r.OrderID
     JOIN Customers c ON c.CustomerID = o.CustomerID
-    JOIN Employees e ON e.EmployeeID = r.EmployeeID`,
+    LEFT JOIN Employees e ON e.EmployeeID = r.EmployeeID`,
 
   Discounts: `
     SELECT d.DiscountID,
@@ -96,11 +96,11 @@ const LIST_QUERIES = {
            s.QuantityShipped AS Quantity,
            s.ShipmentCost AS Cost,
            COALESCE(DATE(s.ArrivalDate), 'On Order') AS ArrivalDate,
-           CONCAT(e.FirstName, ' ', e.LastName) AS ReceivedBy
+           COALESCE(CONCAT(e.FirstName, ' ', e.LastName), 'Former employee') AS ReceivedBy
     FROM Shipments s
     JOIN Inventory inv ON inv.InventoryID = s.InventoryID
     JOIN Items it ON it.ItemID = inv.ItemID
-    JOIN Employees e ON e.EmployeeID = s.EmployeeID`
+    LEFT JOIN Employees e ON e.EmployeeID = s.EmployeeID`
 }
 
 function findAll(entity){
