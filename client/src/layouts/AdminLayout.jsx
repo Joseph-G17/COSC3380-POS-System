@@ -8,18 +8,19 @@ const checkSessionEmployee = () => {
     const user = JSON.parse(sessionStorage.getItem('saveso-employee'));
 
     if(user && user.id && typeof user.firstName == 'string'){
-      return { id: user.id, firstName: user.firstName, clockedIn: user.clockedIn, department: user.department}
+      return { id: user.id, firstName: user.firstName, clockedIn: user.clockedIn, department: user.department, role: user.role}
     }
   } catch(error){
     console.log(error);
   }
   return null;
 }
-//NEXT STEP IS TO ADD CHECKING ROLE TO THIS TO MAKE SURE THEY CAN'T USE ANOTHER DOMAIN (ADMIN IN CASHIER, CASHIER IN LOGIN, ETC.)
 const AdminLayout = () => {
   const navigate = useNavigate();
   const [employee, setEmployee] = useState(checkSessionEmployee());
-  const employeeExists = !!employee;
+  //Only managers (role 1) and admins (role 2) can open the admin pages
+  const role = employee ? Number(employee.role) : NaN;
+  const employeeExists = role === 1 || role === 2;
 
   useEffect(() =>{
     if(!employeeExists)
@@ -28,6 +29,11 @@ const AdminLayout = () => {
 
 
   }, [employeeExists, navigate]) //check if employee exists on navigate or if employee happens to not exist
+
+  //Show nothing while the page sends someone without access back to the login page
+  if(!employeeExists){
+    return null;
+  }
 
   return (
     <div className='admin-layout grid h-dvh grid-cols-[15rem_1fr] grid-rows-[auto_minmax(0,1fr)]'>

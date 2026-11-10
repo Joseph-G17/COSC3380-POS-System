@@ -68,6 +68,7 @@ async function getCustomerOrderHistory(customerId) {
     SELECT CAST(o.OrderID AS CHAR) AS orderId,
            DATE_FORMAT(o.OrderDate, '%Y-%m-%d %H:%i:%s') AS orderDate,
            o.OrderType AS orderType, o.OrderTotal AS total,
+           o.OrderStatus AS orderStatus, DATE_FORMAT(o.CanceledDate, '%Y-%m-%d %H:%i:%s') AS canceledDate,
            a.Address AS deliveryAddress, d.DiscountCode AS discountCode, d.DiscountPercent AS discountPercent,
            CAST(oi.ItemID AS CHAR) AS itemId, i.ItemName AS name,
            oi.QuantityOrdered AS quantity, oi.ItemPrice AS unitPrice
@@ -86,6 +87,7 @@ async function getCustomerOrderHistory(customerId) {
     if (!order || order.orderId !== row.orderId) {
       order = {
         orderId: row.orderId, orderDate: row.orderDate, orderType: row.orderType,
+        orderStatus: row.orderStatus, canceledDate: row.canceledDate,
         total: Number(row.total), deliveryAddress: row.deliveryAddress,
         discountCode: row.discountCode, discountPercent: row.discountPercent, items: [],
       };
