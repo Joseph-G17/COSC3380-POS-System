@@ -26,7 +26,7 @@ function CustomerLoginPage() {
       return false;
     }
     //Save the employee the same way the staff pages read it
-    sessionStorage.setItem("saveso-employee", JSON.stringify({ id: staff.employeeID, firstName: staff.firstName, clockedIn: false, department: staff.departmentID }));
+    sessionStorage.setItem("saveso-employee", JSON.stringify({ id: staff.employeeID, firstName: staff.firstName, clockedIn: false, department: staff.departmentID, role: staff.Role }));
     //Role 0 is a cashier, the other roles use the admin pages
     if(staff.Role === 0){
       navigate("/cashier");
