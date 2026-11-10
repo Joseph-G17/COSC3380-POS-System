@@ -144,7 +144,7 @@ const ReportsPage = () => {
     else status = `${applied} filter(s) applied. ${rows.length} of ${allRows.length} rows match.`;
   }
   if (!message && !loaded) status = 'Loading...';
-  if (!shown) status = loaded ? 'Set your filters (or leave them blank for everything) and click Apply to run the report.' : 'Loading...';
+  if (!shown) status = loaded ? 'Set your filters and click Apply to run the report.' : 'Loading...';
 
   return (
     <section className='report-page border-b border-r'>
