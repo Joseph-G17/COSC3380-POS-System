@@ -1,31 +1,7 @@
+import NavBar from '../admin/NavBar'
 
-import React from 'react'
+//The cashier POS uses the same nav bar as admin (search, notifications, clock-in, log out).
+//NavBar switches its POS/clock-in buttons when it is on a /cashier page.
+const CashNavBar = (props) => <NavBar {...props} />
 
-const CashNavBar = () => {
-  return (
-      <nav className='flex border-t border-r border-b'>
-        <div className='flex flex-1 space-x-2 p-7'>
-          <search>
-            <form action='search' >
-              <label htmlFor="" className='text-sm'>Search</label>
-              <input className='border ml-1' type="search"/>
-            </form>
-          </search>
-          <section className='flex space-x-4 ml-auto'>
-            <button>
-              POS
-            </button>
-            <button>
-              CLOCK-IN
-            </button>
-            <button>
-              PROFILE
-            </button>
-          </section>
-        </div>
-      </nav>
-  )
-}
-  
 export default CashNavBar
-
