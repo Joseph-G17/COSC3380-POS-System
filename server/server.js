@@ -6,7 +6,7 @@ const { getReport } = require('./controllers/reportsController')
 const { getNotifications } = require('./controllers/notificationsController')
 
 //cashier:
-const {adjustItemStock, createOrder, loginEmployee } = require('./controllers/itemController');
+const {adjustItemStock, createOrder, loginEmployee, getItems } = require('./controllers/itemController');
 
 // Load the customer handlers; their specific routes must precede generic entity routes.
 const { getProducts } = require('./controllers/OnlineStoreController');
@@ -62,6 +62,17 @@ const handler = (req, res) => {
   if(req.url === '/api/login' && req.method === 'POST'){
     getEmployeeLogin(req, res);
   }
+
+  else if(req.url.split('?')[0] === '/api/orders' && req.method === 'POST'){
+    createOrder(req, res);
+  }
+  else if(req.url.split('?')[0] === '/api/Items' && req.method === 'GET'){
+    getItems(req, res);
+  }
+  else if(req.url.split('?')[0].match(/^\/api\/Items\/([0-9]+)\/stock$/) && req.method === 'POST'){
+    const [, id] = req.url.split('?')[0].match(/^\/api\/Items\/([0-9]+)\/stock$/);
+    adjustItemStock(req, res, id);}
+
   else if(req.url === '/api/employee-hours' && req.method === 'PUT'){
     updateEmployeeHours(req, res);
   }
@@ -75,6 +86,7 @@ const handler = (req, res) => {
   //has to be above the universal routes or it gets read as an entity
   else if(req.url === '/api/notifications' && req.method === 'GET'){
     getNotifications(req, res);
+
   }
   // ProductList and Sidebar need these customer APIs before generic table matching.
   else if(req.url === '/api/products' && req.method === 'GET'){

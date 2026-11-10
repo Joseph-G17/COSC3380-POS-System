@@ -9,10 +9,14 @@ const getItemName = (item) => item.ItemName || item.ItemDescription || `Item ${i
 
 const CashierCheckout = () => {
   const [items, setItems] = useState([]);
+  const [discounts, setDiscounts] = useState([]);
   const [cart, setCart] = useState([]);
   const [search, setSearch] = useState('');
+  const [discountSearch, setDiscountSearch] = useState('');
+  const [discountsError, setDiscountsError] = useState('');
+  const [areDiscountsLoading, setAreDiscountsLoading] = useState(true);
   const [customerId, setCustomerId] = useState('');
-  const [employeeId, setEmployeeId] = useState(
+  const [employeeId] = useState(
     () => sessionStorage.getItem('employeeID') ?? ''
   );
   const [paymentMethod, setPaymentMethod] = useState('Cash');
@@ -24,7 +28,7 @@ const CashierCheckout = () => {
   useEffect(() => {
     const loadItems = async () => {
       try {
-        const response = await fetch('/api/items');
+        const response = await fetch('/api/Items');
         if (!response.ok) throw new Error('Could not load items');
 
         const data = await response.json();
@@ -56,6 +60,28 @@ const CashierCheckout = () => {
     loadItems();
   }, []);
 
+  useEffect(() => {
+    const loadDiscounts = async () => {
+      try {
+        const response = await fetch('/api/Discounts');
+        if (!response.ok) throw new Error('Could not load discounts');
+
+        const data = await response.json();
+        if (!Array.isArray(data)) throw new Error('The discounts response was invalid');
+
+        setDiscounts(data);
+      } catch (loadError) {
+        setDiscountsError(
+          loadError instanceof Error ? loadError.message : 'Could not load discounts'
+        );
+      } finally {
+        setAreDiscountsLoading(false);
+      }
+    };
+
+    loadDiscounts();
+  }, []);
+
   const filteredItems = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
     if (!normalizedSearch) return items;
@@ -65,6 +91,16 @@ const CashierCheckout = () => {
         .some((value) => String(value ?? '').toLowerCase().includes(normalizedSearch))
     );
   }, [items, search]);
+
+  const filteredDiscounts = useMemo(() => {
+    const normalizedSearch = discountSearch.trim().toLowerCase();
+    if (!normalizedSearch) return [];
+
+    return discounts.filter((discount) =>
+      [discount.DiscountCode, discount.ItemID, discount.DiscountID]
+        .some((value) => String(value ?? '').toLowerCase().includes(normalizedSearch))
+    );
+  }, [discounts, discountSearch]);
 
   const totalInCents = cart.reduce(
     (total, cartItem) => total + cartItem.item.priceInCents * cartItem.quantity,
@@ -267,6 +303,52 @@ const CashierCheckout = () => {
             <span aria-live="polite">{formatPrice(totalInCents)}</span>
           </div>
 
+          <section className="mt-5 border-t pt-5" aria-labelledby="discount-search-heading">
+            <h3 id="discount-search-heading" className="mb-2 text-lg font-medium">
+              Find a discount
+            </h3>
+            <label className="sr-only" htmlFor="discount-search">
+              Search discounts by code or item ID
+            </label>
+            <input
+              className="w-full rounded border px-3 py-2"
+              id="discount-search"
+              type="search"
+              placeholder="Search discount code or item ID"
+              value={discountSearch}
+              onChange={(event) => setDiscountSearch(event.target.value)}
+            />
+            {areDiscountsLoading && <p className="mt-2 text-sm text-gray-600">Loading discounts...</p>}
+            {discountsError && <p className="mt-2 text-sm text-red-700" role="alert">{discountsError}</p>}
+            {!areDiscountsLoading && !discountsError && !discountSearch.trim() && (
+              <p className="mt-2 text-sm text-gray-600">Enter a discount code or item ID to search.</p>
+            )}
+            {!areDiscountsLoading && !discountsError && discountSearch.trim() && filteredDiscounts.length === 0 && (
+              <p className="mt-2 text-sm text-gray-600">No matching discounts found.</p>
+            )}
+            {filteredDiscounts.length > 0 && (
+              <ul className="mt-3 max-h-40 divide-y overflow-y-auto rounded border">
+                {filteredDiscounts.map((discount) => (
+                  <li className="p-3 text-sm" key={discount.DiscountID}>
+                    <p className="font-medium">{discount.DiscountCode}</p>
+                    <p className="text-gray-600">
+                      {discount.DiscountPercent}% off
+                      {discount.NewItemPrice != null &&
+                        ` · New price ${formatPrice(Math.round(Number(discount.NewItemPrice) * 100))}`}
+                      {discount.ItemID != null && ` · Item ${discount.ItemID}`}
+                    </p>
+                    {discount.ExpirationDate && (
+                      <p className="text-gray-500">Expires {discount.ExpirationDate}</p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+            <p className="mt-2 text-xs text-gray-500">
+              Discount lookup only; discounts are not applied to the order total.
+            </p>
+          </section>
+
           <form className="mt-5 space-y-4 border-t pt-5" onSubmit={checkout}>
             <div>
               <label className="mb-1 block text-sm font-medium" htmlFor="customer-id">Customer ID</label>
@@ -282,21 +364,10 @@ const CashierCheckout = () => {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium" htmlFor="cashier-employee-id">
-                Cashier employee ID
-              </label>
-              <input
-                className="w-full rounded border px-3 py-2"
-                id="cashier-employee-id"
-                type="number"
-                min="1"
-                step="1"
-                required
-                value={employeeId}
-                readOnly={Boolean(employeeId)}
-                onChange={(event) => setEmployeeId(event.target.value)}
-              />
-              <p className="mt-1 text-xs text-gray-500">Required to record which cashier handled the order.</p>
+              <p className="text-sm font-medium">Cashier employee ID</p>
+              <p className="mt-1 rounded border bg-gray-50 px-3 py-2" aria-live="polite">
+                {employeeId || 'No cashier is logged in'}
+              </p>
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium" htmlFor="payment-method">Payment method</label>
@@ -314,7 +385,7 @@ const CashierCheckout = () => {
             <button
               className="w-full rounded bg-green-700 px-4 py-3 font-semibold text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-50"
               type="submit"
-              disabled={cart.length === 0 || isSubmitting}
+              disabled={cart.length === 0 || !employeeId || isSubmitting}
             >
               {isSubmitting ? 'Creating order...' : 'Checkout'}
             </button>

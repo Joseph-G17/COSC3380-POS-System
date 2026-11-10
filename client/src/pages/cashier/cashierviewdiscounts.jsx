@@ -24,7 +24,7 @@ const CashierViewDiscounts = () => {
   useEffect(() => {
     const loadDiscounts = async () => {
       try {
-        const response = await fetch('/api/discounts');
+        const response = await fetch('/api/Discounts');
         if (!response.ok) throw new Error('Could not load discounts');
 
         const data = await response.json();

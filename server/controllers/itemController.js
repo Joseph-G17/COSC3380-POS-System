@@ -5,7 +5,7 @@ const isPositiveInteger = (value) => Number.isSafeInteger(value) && value > 0;
 
 async function adjustItemStock(req, res, id) {
   try {
-    const items = await Items.findOne('Items', id);
+    const items = await Items.findItemByID(id);
     if (items.length === 0) {
       res.writeHead(404, {'Content-Type': 'application/json'});
       return res.end(JSON.stringify({ message: 'Item Not Found' }));
@@ -118,7 +118,7 @@ async function loginEmployee(req, res) {
 // route: GET /api/items
 async function getItems(req, res) {
   try {
-    const items = await Items.findAll();
+    const items = await Items.findall('Items');
 
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(items));
