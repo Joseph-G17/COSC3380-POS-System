@@ -1,5 +1,17 @@
 import { useEffect, useState } from 'react';
 
+const isImageUrlColumn = (column) => /image.?url/i.test(column);
+const isDateColumn = (column) => /date/i.test(column);
+
+const formatDateOnly = (value) => {
+  if (typeof value !== 'string') return value ?? '—';
+  const datePart = value.match(/^\d{4}-\d{2}-\d{2}/)?.[0];
+  if (datePart) return datePart;
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString();
+};
+
 const CashierViewitems = () => {
   const [items, setItems] = useState([]);
   const [error, setError] = useState('');
@@ -52,7 +64,7 @@ const CashierViewitems = () => {
   };
 
   const columns = items.length > 0
-    ? Object.keys(items[0]).filter((column) => column !== 'Stock')
+    ? Object.keys(items[0]).filter((column) => column !== 'Stock' && !isImageUrlColumn(column))
     : [];
 
   return (
@@ -84,7 +96,7 @@ const CashierViewitems = () => {
                   <tr key={item.ItemID}>
                     {columns.map((column) => (
                       <td key={column} className="border p-2">
-                        {item[column] ?? '—'}
+                        {isDateColumn(column) ? formatDateOnly(item[column]) : item[column] ?? '—'}
                       </td>
                     ))}
                     <td className="border p-2">{stock}</td>

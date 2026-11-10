@@ -41,15 +41,22 @@ async function createOrder(req, res) {
       return res.end(JSON.stringify({ message: 'Request body must be valid JSON' }));
     }
 
-    const { employeeId, customerId, paymentMethod, items } = order ?? {};
-    if (!isPositiveInteger(employeeId) || !isPositiveInteger(customerId)) {
+    const { employeeId, customerId, paymentMethod, items, discountCode } = order ?? {};
+    if (!isPositiveInteger(employeeId) ||
+        (customerId !== null && !isPositiveInteger(customerId))) {
       res.writeHead(400, {'Content-Type': 'application/json'});
-      return res.end(JSON.stringify({ message: 'Cashier employee ID and customer ID must be positive integers' }));
+      return res.end(JSON.stringify({ message: 'Cashier employee ID must be a positive integer and customer ID must be null or a positive integer' }));
     }
 
     if (!['Card', 'Cash', 'Giftcard'].includes(paymentMethod)) {
       res.writeHead(400, {'Content-Type': 'application/json'});
       return res.end(JSON.stringify({ message: 'Payment method must be Card, Cash, or Giftcard' }));
+    }
+
+    if (discountCode !== undefined && discountCode !== null &&
+        (typeof discountCode !== 'string' || !discountCode.trim() || discountCode.trim().length > 20)) {
+      res.writeHead(400, {'Content-Type': 'application/json'});
+      return res.end(JSON.stringify({ message: 'Discount code must be a non-empty string of at most 20 characters' }));
     }
 
     if (!Array.isArray(items) || items.length === 0 || items.some((item) =>
@@ -69,7 +76,8 @@ async function createOrder(req, res) {
       employeeId,
       customerId,
       paymentMethod,
-      items
+      items,
+      discountCode: discountCode?.trim() || null
     });
     res.writeHead(201, {'Content-Type': 'application/json'});
     res.end(JSON.stringify(createdOrder));

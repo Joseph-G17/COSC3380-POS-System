@@ -166,15 +166,16 @@ async function createOrder({ employeeId, customerId, paymentMethod, items, order
       connection.beginTransaction((error) => error ? reject(error) : resolve());
     });
 
-    // Make sure the customer exists before saving the order.
-    const customers = await runQuery(
-      'SELECT CustomerID FROM Customers WHERE CustomerID = ?',
-      [customerId]
-    );
-    if (customers.length === 0) {
-      const error = new Error('Customer ID was not found');
-      error.statusCode = 404;
-      throw error;
+    if (customerId !== null) {
+      const customers = await runQuery(
+        'SELECT CustomerID FROM Customers WHERE CustomerID = ?',
+        [customerId]
+      );
+      if (customers.length === 0) {
+        const error = new Error('Customer ID was not found');
+        error.statusCode = 404;
+        throw error;
+      }
     }
 
     const sortedItems = [...items].sort((left, right) => left.itemId - right.itemId);
@@ -231,14 +232,16 @@ async function createOrder({ employeeId, customerId, paymentMethod, items, order
         throw error;
       }
       discountId = discounts[0].DiscountID;
-      const usedOrders = await runQuery(
-        'SELECT OrderID FROM Orders WHERE CustomerID = ? AND DiscountID = ?',
-        [customerId, discountId]
-      );
-      if(usedOrders.length > 0){
-        const error = new Error('You have used this code before');
-        error.statusCode = 409;
-        throw error;
+      if (customerId !== null) {
+        const usedOrders = await runQuery(
+          'SELECT OrderID FROM Orders WHERE CustomerID = ? AND DiscountID = ?',
+          [customerId, discountId]
+        );
+        if(usedOrders.length > 0){
+          const error = new Error('You have used this code before');
+          error.statusCode = 409;
+          throw error;
+        }
       }
 
       //Take the percent off the whole order
