@@ -1,7 +1,7 @@
 const http = require('http');
 
 const { getEmployeeLogin, updateEmployeeHours, getLoginInfo, updateLoginInfo } = require('./controllers/employeesController')
-const { getEntities, getEntity, updateEntity, deleteEntity, getEntityColumns, createEntity } = require('./controllers/universalController');
+const { getEntities, getEntity, updateEntity, deleteEntity, getEntityColumns, createEntity, getOrderItems } = require('./controllers/universalController');
 const { getReport } = require('./controllers/reportsController')
 const { deleteDepartment } = require('./controllers/departmentsController')
 const { getNotifications } = require('./controllers/notificationsController')
@@ -105,7 +105,12 @@ const handler = (req, res) => {
     const entity = req.url.split('/')[2];
     getEntities(req, res, entity);
   }
-  else if(req.url.match(/^\/api\/([A-Za-z ]+)\/([0-9]+)$/) && req.method === 'GET'){
+  else if(req.url.match(/^\/api\/Orders\/([0-9]+)\/items$/) && req.method === 'GET'){
+    const id = req.url.split('/')[3]; // ['', 'api', 'Orders', '4', 'items']
+    getOrderItems(req, res, id);
+  }
+  //ids are a number, or "12-5" for two-column keys (Sale Items, Seasonal Deals)
+  else if(req.url.match(/^\/api\/([A-Za-z ]+)\/([0-9]+(?:-[0-9]+)?)$/) && req.method === 'GET'){
     const [, , entity, id] = req.url.split('/');
     getEntity(req, res, entity, id);
   }
@@ -117,7 +122,7 @@ const handler = (req, res) => {
     const entity = req.url.split('/')[2];
     createEntity(req, res, entity);
   }
-  else if(req.url.match(/^\/api\/([A-Za-z ]+)\/([0-9]+)$/) && req.method === 'PUT'){
+  else if(req.url.match(/^\/api\/([A-Za-z ]+)\/([0-9]+(?:-[0-9]+)?)$/) && req.method === 'PUT'){
     const [, , entity, id] = req.url.split('/'); // ['', 'api', 'Employees', '1']
     updateEntity(req, res, entity, id);
   }
@@ -126,7 +131,7 @@ const handler = (req, res) => {
     const id = url.pathname.split('/')[3]; // ['', 'api', 'Departments', '2']
     deleteDepartment(req, res, id, url.searchParams.get('moveTo'));
   }
-  else if(req.url.match(/^\/api\/([A-Za-z ]+)\/([0-9]+)$/) && req.method === 'DELETE'){
+  else if(req.url.match(/^\/api\/([A-Za-z ]+)\/([0-9]+(?:-[0-9]+)?)$/) && req.method === 'DELETE'){
     const [, , entity, id] = req.url.split('/'); 
     deleteEntity(req, res, entity, id);
   } 

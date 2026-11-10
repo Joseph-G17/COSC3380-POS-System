@@ -11,6 +11,7 @@ export const FOREIGN_KEYS = {
   InventoryID: { entity: 'Inventory', idField: 'InventoryID', label: (r) => `${r.Item} (${r.Supplier || 'No supplier'})` },
   OrderID: { entity: 'Orders', idField: 'OrderID', label: (r) => `Order #${r.OrderID} - ${r.Customer} (${r.OrderDate})` },
   SaleID: { entity: 'Sales', idField: 'SaleID', label: (r) => r.SaleName },
+  SeasonID: { entity: 'Seasons', idField: 'SeasonID', label: (r) => r.SeasonName },
   DiscountID: { entity: 'Discounts', idField: 'DiscountID', label: (r) => r.Code || r.DiscountCode }
 }
 

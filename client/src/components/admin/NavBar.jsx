@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useLocation } from "react-router-dom"
 
 function logoutPopUp() {
     const confirmLogout = window.confirm('Would you like to log out?');
@@ -14,9 +14,14 @@ function logoutPopUp() {
   }
 
 
+//shared by the admin pages and the cashier POS (CashNavBar just renders this)
 const NavBar = ({ employee }) => {
-  
+
   const navigate = useNavigate();
+  //on the POS the buttons point at the cashier pages; managers/admins (role 1/2) get a way back to admin
+  const inPOS = useLocation().pathname.startsWith('/cashier');
+  const canOpenAdmin = employee && (Number(employee.role) === 1 || Number(employee.role) === 2);
+  const clockInPath = inPOS ? '/cashier/clock-in' : '/admin/clock-in';
   //when not set employee == null automatically
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -84,10 +89,17 @@ const NavBar = ({ employee }) => {
                 </div>
               )}
             </div>
-            <button className='button-highlight p-1 border' onClick={()=> navigate('/cashier')} > 
-              POS
-            </button>
-            <button className='button-highlight p-1 border' onClick={()=> navigate('/admin/clock-in')}>
+            {!inPOS && (
+              <button className='button-highlight p-1 border' onClick={()=> navigate('/cashier')} >
+                POS
+              </button>
+            )}
+            {inPOS && canOpenAdmin && (
+              <button className='button-highlight p-1 border' onClick={()=> navigate('/admin')} >
+                DASHBOARD
+              </button>
+            )}
+            <button className='button-highlight p-1 border' onClick={()=> navigate(clockInPath)}>
               CLOCK-IN
             </button>
             <button className='button-highlight p-1 border' onClick={logoutPopUp}> 

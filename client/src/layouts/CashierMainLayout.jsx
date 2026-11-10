@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
 import CashNavBar from '../components/cashier/CashNavBar'
 import CashSideBar from '../components/cashier/CashSideBar'
@@ -14,7 +14,8 @@ function readEmployee(){
 
 const CashierMainLayout = () => {
   const navigate = useNavigate();
-  const employee = readEmployee();
+  //state so the clock-in page can update clockedIn, same as AdminLayout
+  const [employee, setEmployee] = useState(readEmployee);
   //Cashiers (role 0) use the register, and managers or admins can open it from the POS button
   const role = employee ? Number(employee.role) : NaN;
   const allowed = role === 0 || role === 1 || role === 2;
@@ -34,8 +35,8 @@ const CashierMainLayout = () => {
     <div>
       <div className='grid min-h-dvh grid-cols-[15rem_1fr] grid-rows-[auto_1fr]'>
       <CashSideBar />
-      <CashNavBar />
-      <Outlet />
+      <CashNavBar employee={employee} />
+      <Outlet context={{employee, setEmployee}} />
     </div>
     </div>
   )

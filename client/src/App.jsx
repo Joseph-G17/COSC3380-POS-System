@@ -62,6 +62,7 @@ const App = () => {
           <Route path='orders' element={<CashierOrders />} />
           <Route path='discounts' element={<CashierViewDiscounts />} />
           <Route path='sales' element={<CashierViewSales />} />
+          <Route path='clock-in' element={<ClockInPage />} />
         </Route>
       </>
     )
