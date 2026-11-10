@@ -5,6 +5,13 @@ import { loadOptions, isRequired, getLabel } from './fieldHelpers';
 import EmployeeHours from './EmployeeHours';
 import EmployeeLogin from './EmployeeLogin';
 import NewCategory from './NewCategory';
+import OrderItems from './OrderItems';
+
+//tables whose id is two columns; the URL id is "SaleID-ItemID" / "SeasonID-ItemID"
+const TWO_COLUMN_KEYS = {
+  'Sale Items': ['SaleID', 'ItemID'],
+  'Seasonal Deals': ['SeasonID', 'ItemID']
+};
 
 const InspectDescription = ({entity, id, idField}) => { 
   const navigate = useNavigate();
@@ -102,6 +109,13 @@ const InspectDescription = ({entity, id, idField}) => {
 
       setInspectedData([{...row, ...changes}]);
       setMessage('Saved!');
+
+      //picked a different sale/season or item: the record's id changed, so move to its new address
+      const keys = TWO_COLUMN_KEYS[entity];
+      if (keys && keys.some((k) => k in changes)) {
+        const newId = keys.map((k) => ({...row, ...changes})[k]).join('-');
+        navigate(`/admin/inspectData/${entity}/${newId}`, { replace: true });
+      }
     } catch(error){
       console.log(error);
       setMessage(error.message);
@@ -186,6 +200,7 @@ const InspectDescription = ({entity, id, idField}) => {
         </p>
       )}
 
+      {entity === 'Orders' && <OrderItems orderId={id} />}
       {entity === 'Employees' && <EmployeeLogin employeeId={id} />}
       {entity === 'Employees' && <EmployeeHours employeeId={id} />}
     </div>

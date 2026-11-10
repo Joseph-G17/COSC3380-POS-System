@@ -14,7 +14,11 @@ const ID_FIELDS = {
     Returns: 'ReturnID',
     Inventory: 'InventoryID',
     Customers: 'CustomerID',
-    Shipments: 'ShipmentID'
+    Shipments: 'ShipmentID',
+    Seasons: 'SeasonID',
+    //two-column keys, the link id becomes "SaleID-ItemID"
+    'Sale Items': ['SaleID', 'ItemID'],
+    'Seasonal Deals': ['SeasonID', 'ItemID']
   };
 
 const HomePage = () => {

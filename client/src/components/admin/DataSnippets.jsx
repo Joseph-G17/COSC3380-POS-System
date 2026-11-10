@@ -29,7 +29,8 @@ const DataSnippets = ({ entity, idField, refresh}) => {
     loadData();
   },[entity, refresh]);
 
-  const headers = rows.length > 0 ? Object.keys(rows[0]).filter((h) => h !== idField) : [];
+  const idFields = [].concat(idField); // one id column, or two for Sale Items / Seasonal Deals
+  const headers = rows.length > 0 ? Object.keys(rows[0]).filter((h) => !idFields.includes(h)) : [];
   while (headers.length > 7){
     headers.pop();
   }
@@ -50,7 +51,7 @@ const DataSnippets = ({ entity, idField, refresh}) => {
       </div>
       <div>
         {rows.map((row) => 
-          <DataSnippet key={row[idField]} entity={entity} idField={idField} row={row} headers={headers}/>
+          <DataSnippet key={idFields.map((f) => row[f]).join('-')} entity={entity} idField={idField} row={row} headers={headers}/>
         )}
       </div>
     </main>

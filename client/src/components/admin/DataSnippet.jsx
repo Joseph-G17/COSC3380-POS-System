@@ -10,7 +10,7 @@ const DataSnippet = ({idField, entity, headers, row }) => {
   return (
     <>
       <NavLink
-        to={`/admin/inspectData/${entity}/${row[idField]}`}
+        to={`/admin/inspectData/${entity}/${[].concat(idField).map((f) => row[f]).join('-')}`}
         className="grid grid-flow-col auto-cols-fr hover:bg-amber-50"
       >
         {headers.map((h) => (

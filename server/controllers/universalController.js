@@ -1,7 +1,22 @@
 const Universal = require('../models/universalModel');
 const { getPostData } = require('../utilities');
 
-const ENTITIES = ['Employees', 'Orders', 'Items', 'Item Categories', 'Discounts', 'Sales', 'Departments', 'Returns', 'Inventory', 'Customers', 'Employee Hours', 'Shipments'];
+const ENTITIES = ['Employees', 'Orders', 'Items', 'Item Categories', 'Discounts', 'Sales', 'Departments', 'Returns', 'Inventory', 'Customers', 'Employee Hours', 'Shipments',
+  'Seasons', 'Sale Items', 'Seasonal Deals'];
+
+// desc: The items inside one order
+// route: GET /api/Orders/:id/items
+async function getOrderItems(req, res, id) {
+  try {
+    const rows = await Universal.findOrderItems(id);
+    res.writeHead(200, {'Content-Type': 'application/json'});
+    res.end(JSON.stringify(rows));
+  } catch (error) {
+    console.log(error);
+    res.writeHead(500, {'Content-Type': 'application/json'});
+    res.end(JSON.stringify({ message: 'Could not load the order items'}));
+  }
+}
 
 // desc: Gets all rows of any entity
 // route: GET /api/:entity
@@ -153,6 +168,7 @@ async function createEntity(req, res, entity) {
 }
 
 module.exports = {
+  getOrderItems,
   getEntities,
   getEntity,
   updateEntity,
