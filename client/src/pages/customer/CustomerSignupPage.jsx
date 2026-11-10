@@ -135,10 +135,7 @@ function CustomerSignupPage() {
           </form>
 
           <p className="mt-5 text-wrap! text-center text-sm">
-            Already have a customer account? <Link to={customerFormUrl("/customer/login", next)} className="font-medium text-green-900 underline">Log in</Link>
-          </p>
-          <p className="mt-6 border-t border-gray-200 pt-5 text-center text-sm">
-            <a href="/login" className="inline-flex min-h-11 items-center text-gray-700 underline">Log in as staff member</a>
+            Already have an account? <Link to={customerFormUrl("/customer/login", next)} className="font-medium text-green-900 underline">Log in</Link>
           </p>
         </section>
 
