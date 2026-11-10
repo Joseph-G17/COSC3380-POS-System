@@ -14,6 +14,12 @@ const orderColumns = [
   ['DiscountID', 'Discount ID']
 ];
 
+const formatOrderDate = (value) => {
+  if (!value) return '—';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString();
+};
+
 const CashierOrders = () => {
   const [orders, setOrders] = useState([]);
   const [error, setError] = useState('');
@@ -64,7 +70,9 @@ const CashierOrders = () => {
                     <td key={column} className="border p-2">
                       {column === 'OrderTotal' && order[column] != null
                         ? `$${Number(order[column]).toFixed(2)}`
-                        : order[column] ?? '—'}
+                        : column === 'OrderDate'
+                          ? formatOrderDate(order[column])
+                          : order[column] ?? '—'}
                     </td>
                   ))}
                 </tr>
