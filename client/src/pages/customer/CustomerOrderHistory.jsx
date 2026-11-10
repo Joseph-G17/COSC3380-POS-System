@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { estimatedDelivery } from "./deliveryEstimate";
 
 const currency = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 
@@ -30,6 +31,9 @@ function OrderList({ orders }) {
             </ul>
             {order.deliveryAddress && (
               <p className="mt-2 text-sm text-gray-600 text-wrap!">Delivery to {order.deliveryAddress}</p>
+            )}
+            {order.orderType === "Delivery" && order.orderStatus !== "Canceled" && (
+              <p className="mt-2 text-sm text-gray-600 text-wrap!">Estimated delivery: {estimatedDelivery(order.orderDate)}</p>
             )}
             {order.canceledDate && (
               <p className="mt-2 text-sm text-red-700 text-wrap!">Canceled on {order.canceledDate}</p>
