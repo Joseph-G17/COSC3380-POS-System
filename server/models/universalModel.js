@@ -49,6 +49,8 @@ const LIST_QUERIES = {
 
   Orders: `
     SELECT o.OrderID,
+           o.EmployeeID,
+           o.CustomerID,
            DATE(o.OrderDate) AS OrderDate,
            CONCAT(c.FirstName, ' ', c.LastName) AS Customer,
            COALESCE(CONCAT(e.FirstName, ' ', e.LastName), 'Former employee') AS Employee,
