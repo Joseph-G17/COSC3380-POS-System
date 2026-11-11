@@ -3,7 +3,8 @@ import { NavLink, useNavigate } from "react-router-dom";
 const SideBar = () => {
   const navigate = useNavigate();
 
-  const entities = ['Employees', 'Departments', 'Orders', 'Items', 'Item Categories', 'Discounts', 'Sales', 'Sale Items', 'Seasons', 'Seasonal Deals', 'Returns', 'Inventory', 'Shipments', 'Customers'];
+  //Returns is view only, so it sits at the bottom
+  const entities = ['Employees', 'Departments', 'Orders', 'Items', 'Item Categories', 'Discounts', 'Sales', 'Sale Items', 'Seasons', 'Seasonal Deals', 'Inventory', 'Shipments', 'Customers', 'Returns'];
   const reports = ['SalesSummary', 'ItemPerformance', 'CustomerReport'];
   //what the user sees instead of the view name
   const reportNames = { SalesSummary: 'Revenue', ItemPerformance: 'Item Sales', CustomerReport: 'Customer' };

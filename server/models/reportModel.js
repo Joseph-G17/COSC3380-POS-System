@@ -1,60 +1,40 @@
 let { query } = require('../sqlConnecter');
 
-//formatted like the view in mysql
+//each report reads its view in mysql by name (server/database/report_views.sql)
 //summary = the boxes at the top of the report, each one is a single number
-//source = the view's own SELECT, used instead of the view itself. The salessummary and
-//itemperformance views can import as placeholders (every column = 1) when the dump's
-//DEFINER user doesn't exist, so these reports run the query directly.
+//money / percent = how the box is shown
 const REPORTS = {
   SalesSummary: {
-    source: `
-      SELECT DATE(o.OrderDate) AS SaleDate,
-             o.OrderType,
-             o.PaymentMethod,
-             COUNT(*) AS OrderCount,
-             SUM(o.OrderTotal) AS TotalSales,
-             ROUND(AVG(o.OrderTotal), 2) AS AvgOrder
-      FROM Orders o
-      GROUP BY DATE(o.OrderDate), o.OrderType, o.PaymentMethod`,
     title: 'Revenue Report',
-    description: 'How much money the store made each day, split by order type and payment method.',
+    description: 'How much money the store made each day. Sales count on the day of the order and returns on the day they were returned. Canceled orders are not counted.',
     orderBy: 'SaleDate DESC',
     summary: [
-      { label: 'Total Revenue', sql: 'SUM(TotalSales)', money: true },
+      { label: 'Gross Sales', sql: 'SUM(TotalSales)', money: true },
+      { label: 'Returns', sql: 'SUM(ReturnTotal)', money: true },
+      { label: 'Net Sales', sql: 'SUM(NetSales)', money: true },
       { label: 'Orders', sql: 'SUM(OrderCount)' },
-      { label: 'Average Order', sql: 'SUM(TotalSales) / SUM(OrderCount)', money: true },
-      { label: 'Days With Sales', sql: 'COUNT(DISTINCT SaleDate)' }
+      { label: 'Average Order', sql: 'SUM(TotalSales) / NULLIF(SUM(OrderCount), 0)', money: true },
+      { label: 'Days', sql: 'COUNT(*)' }
     ],
     filters: {
       from: { column: 'SaleDate', op: '>=' },
       to: { column: 'SaleDate', op: '<=' },
-      orderType: { column: 'OrderType', op: '=' },
-      paymentMethod: { column: 'PaymentMethod', op: '=' },
-      minSales: { column: 'TotalSales', op: '>=' }
+      minSales: { column: 'TotalSales', op: '>=' },
+      minNet: { column: 'NetSales', op: '>=' },
+      minReturns: { column: 'ReturnTotal', op: '>=' }
     }
   },
   ItemPerformance: {
-    source: `
-      SELECT it.ItemID,
-             it.ItemName,
-             c.CategoryName AS Category,
-             it.ItemPrice,
-             (SELECT IFNULL(SUM(oi.QuantityOrdered), 0)
-                FROM \`Ordered Items\` oi WHERE oi.ItemID = it.ItemID) AS UnitsSold,
-             (SELECT IFNULL(SUM(oi.QuantityOrdered * oi.ItemPrice), 0)
-                FROM \`Ordered Items\` oi WHERE oi.ItemID = it.ItemID) AS Revenue,
-             (SELECT IFNULL(SUM(ri.QuantityReturned), 0)
-                FROM \`Returned Items\` ri WHERE ri.ItemID = it.ItemID) AS UnitsReturned
-      FROM Items it
-      JOIN \`Item Categories\` c ON c.ItemCategoryID = it.ItemCategoryID`,
     title: 'Item Sales Report',
-    description: 'Which items sell the most, how much money they bring in, and how often they come back.',
+    description: 'Which items sell the most, how much money they bring in, and how often they come back. Canceled orders are not counted.',
     orderBy: 'UnitsSold DESC',
     summary: [
       { label: 'Items', sql: 'COUNT(*)' },
       { label: 'Item Revenue', sql: 'SUM(Revenue)', money: true },
       { label: 'Units Sold', sql: 'SUM(UnitsSold)' },
-      { label: 'Units Returned', sql: 'SUM(UnitsReturned)' }
+      { label: 'Units Returned', sql: 'SUM(UnitsReturned)' },
+      { label: 'Net Units', sql: 'SUM(NetUnits)' },
+      { label: 'Return Rate', sql: 'ROUND(SUM(UnitsReturned) / NULLIF(SUM(UnitsSold), 0) * 100, 1)', percent: true }
     ],
     filters: {
       itemName: { column: 'ItemName', op: 'LIKE' },
@@ -66,20 +46,24 @@ const REPORTS = {
   },
   CustomerReport: {
     title: 'Customer Report',
-    description: 'Who shops with us, how much they spend, and when they last came in.',
+    description: 'Who shops with us, how much they spend after returns, and when they last came in. Canceled orders are not counted toward spending.',
     orderBy: 'TotalSpent DESC',
     summary: [
       { label: 'Customers', sql: 'COUNT(*)' },
       { label: 'Active Members', sql: "SUM(Membership = 'Active')" },
       { label: 'Total Spent', sql: 'SUM(TotalSpent)', money: true },
-      { label: 'Average Per Customer', sql: 'AVG(TotalSpent)', money: true }
+      { label: 'Returned', sql: 'SUM(TotalReturned)', money: true },
+      { label: 'Net Spent', sql: 'SUM(NetSpent)', money: true },
+      { label: 'Average Per Customer', sql: 'AVG(TotalSpent)', money: true },
+      { label: 'Canceled Orders', sql: 'SUM(CanceledOrders)' }
     ],
     filters: {
       customer: { column: 'CustomerName', op: 'LIKE' },
       membership: { column: 'Membership', op: '=' },
       minSpent: { column: 'TotalSpent', op: '>=' },
       from: { column: 'LastOrderDate', op: '>=' },
-      to: { column: 'LastOrderDate', op: '<=' }
+      to: { column: 'LastOrderDate', op: '<=' },
+      minCanceled: { column: 'CanceledOrders', op: '>=' }
     }
   }
 };
@@ -87,10 +71,9 @@ const REPORTS = {
 async function findReport(report, filters){
   const reportFilters = REPORTS[report].filters;
   const conditions = [];
-  //reports with a source query read from it; the rest read from their view by name
-  const source = REPORTS[report].source;
-  const from = source ? `(${source}) AS r` : '??';
-  const params = source ? [] : [report];
+  //the view's name, e.g. SalesSummary -> salessummary
+  const from = '??';
+  const params = [report];
 
   for (const name in reportFilters) {
     const value = filters[name];
@@ -122,7 +105,8 @@ async function findReport(report, filters){
   const summary = REPORTS[report].summary.map((s) => ({
     label: s.label,
     value: Number(totals[0][s.label]) || 0,
-    money: s.money || false
+    money: s.money || false,
+    percent: s.percent || false
   }));
 
   return {

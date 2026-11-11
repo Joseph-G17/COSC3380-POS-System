@@ -1,23 +1,22 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom"
-
-function logoutPopUp() {
-    const confirmLogout = window.confirm('Would you like to log out?');
-    
-    if(!confirmLogout)
-      return;
-      
-    sessionStorage.removeItem("saveso-employee");
-    sessionStorage.removeItem("saveso-timestamp")
-
-    window.location.reload();
-  }
+import { useConfirm } from "../ConfirmPopup";
 
 
 //shared by the admin pages and the cashier POS (CashNavBar just renders this)
 const NavBar = ({ employee }) => {
 
   const navigate = useNavigate();
+  const [popup, ask] = useConfirm();
+
+  const logoutPopUp = async () => {
+    if (!(await ask('Would you like to log out?'))) return;
+
+    sessionStorage.removeItem("saveso-employee");
+    sessionStorage.removeItem("saveso-timestamp")
+
+    window.location.reload();
+  }
   //on the POS the buttons point at the cashier pages; managers/admins (role 1/2) get a way back to admin
   const inPOS = useLocation().pathname.startsWith('/cashier');
   const canOpenAdmin = employee && (Number(employee.role) === 1 || Number(employee.role) === 2);
@@ -76,6 +75,7 @@ const NavBar = ({ employee }) => {
 
   return (
       <nav className='flex border-t border-r border-b'>
+        {popup}
         <div className='flex flex-1 space-x-2 p-7'>
           <search>
             <form action='search' >

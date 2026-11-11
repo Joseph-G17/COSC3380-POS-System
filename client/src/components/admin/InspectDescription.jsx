@@ -6,6 +6,7 @@ import EmployeeHours from './EmployeeHours';
 import EmployeeLogin from './EmployeeLogin';
 import NewCategory from './NewCategory';
 import OrderItems from './OrderItems';
+import { useConfirm } from '../ConfirmPopup';
 
 //tables whose id is two columns; the URL id is "SaleID-ItemID" / "SeasonID-ItemID"
 const TWO_COLUMN_KEYS = {
@@ -24,6 +25,7 @@ const InspectDescription = ({entity, id, idField}) => {
   const [showHours, setShowHours] = useState(false);
   const [departments, setDepartments] = useState([]);
   const [moveTo, setMoveTo] = useState('');
+  const [popup, ask] = useConfirm();
 
   //deleting a department moves its employees somewhere else first
   useEffect(() => {
@@ -130,7 +132,7 @@ const InspectDescription = ({entity, id, idField}) => {
     const prompt = target
       ? `Move this department's employees to ${target.DepartmentName} and delete it? This cannot be undone.`
       : `Delete this ${entity} record? This cannot be undone.`;
-    if (!window.confirm(prompt)) return;
+    if (!(await ask(prompt, { confirmText: 'Delete', cancelText: 'Cancel' }))) return;
     try{
       const query = entity === 'Departments' && moveTo ? `?moveTo=${moveTo}` : '';
       const response = await fetch(`/api/${entity}/${id}${query}`,{
@@ -149,7 +151,7 @@ const InspectDescription = ({entity, id, idField}) => {
 
   //the only change an admin can make to an order
   const handleCancelOrder = async() => {
-    if (!window.confirm(`Cancel order #${id}? This cannot be undone.`)) return;
+    if (!(await ask(`Cancel order #${id}? This cannot be undone.`, { confirmText: 'Cancel Order', cancelText: 'Keep Order' }))) return;
     try{
       const response = await fetch(`/api/Orders/${id}`,{
         method: 'PUT',
@@ -186,6 +188,7 @@ const InspectDescription = ({entity, id, idField}) => {
 
   return (
     <div className="p-4 max-w-3xl">
+      {popup}
       <button className="button-highlight border px-2 mb-4" onClick={() => navigate(-1)}>Back</button>
 
       {readOnly
