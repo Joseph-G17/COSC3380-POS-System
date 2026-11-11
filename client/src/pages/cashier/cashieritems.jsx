@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-const isImageUrlColumn = (column) => /image.?url/i.test(column);
+const isImageColumn = (column) => /image/i.test(column);
 const isDateColumn = (column) => /date/i.test(column);
 
 const formatDateOnly = (value) => {
@@ -64,7 +64,7 @@ const CashierViewitems = () => {
   };
 
   const columns = items.length > 0
-    ? Object.keys(items[0]).filter((column) => column !== 'Stock' && !isImageUrlColumn(column))
+    ? Object.keys(items[0]).filter((column) => column !== 'Stock' && !isImageColumn(column))
     : [];
 
   return (
