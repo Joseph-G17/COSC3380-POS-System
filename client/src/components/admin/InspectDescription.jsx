@@ -145,16 +145,50 @@ const InspectDescription = ({entity, id, idField}) => {
     }
   }
 
+  //the only change an admin can make to an order
+  const handleCancelOrder = async() => {
+    if (!window.confirm(`Cancel order #${id}? This cannot be undone.`)) return;
+    try{
+      const response = await fetch(`/api/Orders/${id}`,{
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ OrderStatus: 'Canceled' })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || `Request failed: ${response.status}`);
+
+      const canceled = {...row, OrderStatus: 'Canceled', CanceledDate: new Date().toISOString()};
+      setInspectedData([canceled]);
+      setFormData(canceled);
+      setMessage('Order canceled.');
+    } catch(error){
+      console.log(error);
+      setMessage(error.message);
+    }
+  }
+
   if (loading) return <p className="p-4">Loading...</p>;
   if (!row) return <p className="p-4">{message || 'No data found.'}</p>;
 
-  const hasChanges = Object.keys(getChanges()).length > 0;
+  //orders and returns are history, a shipment is too once it has arrived
+  const arrived = entity === 'Shipments' && row.ArrivalDate !== null && row.ArrivalDate !== undefined;
+  const readOnly = entity === 'Orders' || entity === 'Returns' || arrived;
+  const readOnlyNote = {
+    Orders: row.OrderStatus === 'Canceled' ? 'This order is canceled.' : 'Orders are view only. You can cancel a completed order.',
+    Returns: 'Returns are view only.',
+    Shipments: 'This shipment has arrived and can no longer be edited or deleted.'
+  }[entity];
+
+  const hasChanges = !readOnly && Object.keys(getChanges()).length > 0;
+  const isSuccess = message === 'Saved!' || message === 'Order canceled.';
 
   return (
     <div className="p-4 max-w-3xl">
       <button className="button-highlight border px-2 mb-4" onClick={() => navigate(-1)}>Back</button>
 
-      <p className="pb-4 text-sm text-gray-500"><span className="text-red-600">*</span> required</p>
+      {readOnly
+        ? <p className="pb-4 text-sm text-gray-500">{readOnlyNote}</p>
+        : <p className="pb-4 text-sm text-gray-500"><span className="text-red-600">*</span> required</p>}
 
       <div className="grid grid-cols-2 gap-4">
         {columns.map((col) => (
@@ -164,7 +198,7 @@ const InspectDescription = ({entity, id, idField}) => {
             label={col.Field === idField ? 'ID' : undefined}
             value={formData[col.Field]}
             options={options[col.Field]}
-            disabled={col.Field === idField}
+            disabled={readOnly || col.Field === idField}
             onChange={handleChange}
           />
         ))}
@@ -182,20 +216,28 @@ const InspectDescription = ({entity, id, idField}) => {
         </div>
       )}
 
-      <div className="flex space-x-2 pt-4">
-        <button
-          className='button-highlight border px-2 disabled:opacity-50'
-          disabled={!hasChanges}
-          onClick={handleConfirm}
-        >
-          Confirm
-        </button>
-        <button className='button-highlight border px-2' onClick={handleDelete}>Delete</button>
-      </div>
+      {!readOnly && (
+        <div className="flex space-x-2 pt-4">
+          <button
+            className='button-highlight border px-2 disabled:opacity-50'
+            disabled={!hasChanges}
+            onClick={handleConfirm}
+          >
+            Confirm
+          </button>
+          <button className='button-highlight border px-2' onClick={handleDelete}>Delete</button>
+        </div>
+      )}
+
+      {entity === 'Orders' && row.OrderStatus !== 'Canceled' && (
+        <div className="flex space-x-2 pt-4">
+          <button className='button-highlight border px-2 text-red-600' onClick={handleCancelOrder}>Cancel Order</button>
+        </div>
+      )}
 
       {hasChanges && !message && <p className="pt-3 text-sm text-gray-500">You have unsaved changes.</p>}
       {message && (
-        <p className={message === 'Saved!' ? 'pt-3 text-green-700' : 'pt-3 text-red-600'}>
+        <p className={isSuccess ? 'pt-3 text-green-700' : 'pt-3 text-red-600'}>
           {message}
         </p>
       )}

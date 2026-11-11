@@ -25,8 +25,8 @@ const NavBar = ({ employee }) => {
   //when not set employee == null automatically
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
-  //cleared stock alerts come back on refresh/logout, cleared shipments stay gone
-  const [dismissed, setDismissed] = useState(() => JSON.parse(localStorage.getItem('saveso-cleared-shipments')) || []);
+  //everything in the bell comes from the notifications table; clearing one marks it read in the db
+  const [dismissed, setDismissed] = useState([]);
 
   const loadNotifications = async () => {
     try{
@@ -47,13 +47,17 @@ const NavBar = ({ employee }) => {
   }, []);
 
   //hides it from the list and the count
-  const dismissNotification = (key) => {
-    setDismissed([...dismissed, key]);
+  const dismissNotification = async (n) => {
+    setDismissed([...dismissed, n.key]);
 
-    //a shipment only arrives once so once you've seen it it's done
-    if (key.startsWith('shipment')) {
-      const cleared = JSON.parse(localStorage.getItem('saveso-cleared-shipments')) || [];
-      localStorage.setItem('saveso-cleared-shipments', JSON.stringify([...cleared, key]));
+    //shipment messages come from the triggers, so clearing one marks it read and it stays gone
+    if (!n.NotificationID) return;
+    try{
+      const response = await fetch(`/api/notifications/${n.NotificationID}`, { method: 'PUT' });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message);
+    } catch(error){
+      console.log(error);
     }
   }
 
@@ -83,7 +87,7 @@ const NavBar = ({ employee }) => {
                         {n.Message}
                         {n.Date && <small className="block text-gray-500">{new Date(n.Date).toLocaleString()}</small>}
                       </p>
-                      <button className="button-highlight px-2" onClick={() => dismissNotification(n.key)}>x</button>
+                      <button className="button-highlight px-2" onClick={() => dismissNotification(n)}>x</button>
                     </div>
                   ))}
                 </div>

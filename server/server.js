@@ -4,7 +4,7 @@ const { getEmployeeLogin, updateEmployeeHours, getLoginInfo, updateLoginInfo } =
 const { getEntities, getEntity, updateEntity, deleteEntity, getEntityColumns, createEntity, getOrderItems } = require('./controllers/universalController');
 const { getReport } = require('./controllers/reportsController')
 const { deleteDepartment } = require('./controllers/departmentsController')
-const { getNotifications } = require('./controllers/notificationsController')
+const { getNotifications, readNotification } = require('./controllers/notificationsController')
 
 //cashier:
 const {adjustItemStock, createOrder, loginEmployee, getItems } = require('./controllers/itemController');
@@ -88,6 +88,10 @@ const handler = (req, res) => {
   else if(req.url === '/api/notifications' && req.method === 'GET'){
     getNotifications(req, res);
 
+  }
+  else if(req.url.match(/^\/api\/notifications\/([0-9]+)$/) && req.method === 'PUT'){
+    const id = req.url.split('/')[3]; // ['', 'api', 'notifications', '5']
+    readNotification(req, res, id);
   }
   // ProductList and Sidebar need these customer APIs before generic table matching.
   else if(req.url === '/api/products' && req.method === 'GET'){

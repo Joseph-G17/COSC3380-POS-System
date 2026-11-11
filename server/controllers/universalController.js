@@ -4,6 +4,36 @@ const { getPostData } = require('../utilities');
 const ENTITIES = ['Employees', 'Orders', 'Items', 'Item Categories', 'Discounts', 'Sales', 'Departments', 'Returns', 'Inventory', 'Customers', 'Employee Hours', 'Shipments',
   'Seasons', 'Sale Items', 'Seasonal Deals'];
 
+//history the admin can look at but not rewrite:
+//- Orders: view only, the one change allowed is canceling a completed order
+//- Returns: view only
+//- Shipments: editable/deletable until they arrive, then view only
+//returns a message when the action isn't allowed, null when it is
+function checkRules(action, entity, row, changes) {
+  if (entity === 'Returns') return 'Returns are view only.';
+
+  if (entity === 'Orders') {
+    if (action === 'create') return 'Orders are made at the register or online store, not here.';
+    if (action === 'delete') return 'Orders cannot be deleted. Cancel the order instead.';
+    const fields = Object.keys(changes);
+    if (fields.length !== 1 || fields[0] !== 'OrderStatus' || changes.OrderStatus !== 'Canceled') {
+      return 'Orders are view only. The only change allowed is canceling the order.';
+    }
+    if (row.OrderStatus === 'Canceled') return 'This order is already canceled.';
+  }
+
+  if (entity === 'Shipments' && action !== 'create' && row.ArrivalDate !== null) {
+    return 'This shipment has already arrived and can no longer be edited or deleted.';
+  }
+
+  return null;
+}
+
+function refuse(res, message) {
+  res.writeHead(403, {'Content-Type': 'application/json'});
+  res.end(JSON.stringify({ message }));
+}
+
 // desc: The items inside one order
 // route: GET /api/Orders/:id/items
 async function getOrderItems(req, res, id) {
@@ -78,6 +108,12 @@ async function updateEntity(req, res, entity, id) {
     const body = await getPostData(req);
     const changes = JSON.parse(body);
 
+    const blocked = checkRules('update', entity, rows[0], changes);
+    if (blocked) return refuse(res, blocked);
+
+    //canceling stamps the time on the server so the admin can't pick it
+    if (entity === 'Orders') changes.CanceledDate = new Date();
+
     await Universal.updateOne(entity, id, changes);
 
     res.writeHead(200, {'Content-Type': 'application/json'});
@@ -103,6 +139,9 @@ async function deleteEntity(req, res, entity, id) {
       res.writeHead(404, {'Content-Type': 'application/json'});
       return res.end(JSON.stringify({ message: `${entity} ${id} Not Found`}));
     }
+
+    const blocked = checkRules('delete', entity, rows[0]);
+    if (blocked) return refuse(res, blocked);
 
     await Universal.deleteOne(entity, id);
 
@@ -152,6 +191,9 @@ async function createEntity(req, res, entity) {
       res.writeHead(404, {'Content-Type': 'application/json'});
       return res.end(JSON.stringify({ message: 'entity Not Found'}));
     }
+
+    const blocked = checkRules('create', entity);
+    if (blocked) return refuse(res, blocked);
 
     const body = await getPostData(req);
     const newRow = JSON.parse(body);
