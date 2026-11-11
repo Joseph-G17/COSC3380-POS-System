@@ -43,9 +43,9 @@ async function createOrder(req, res) {
 
     const { employeeId, customerId, paymentMethod, items, discountCode } = order ?? {};
     if (!isPositiveInteger(employeeId) ||
-        (customerId !== null && !isPositiveInteger(customerId))) {
+        (customerId !== undefined && customerId !== null && !isPositiveInteger(customerId))) {
       res.writeHead(400, {'Content-Type': 'application/json'});
-      return res.end(JSON.stringify({ message: 'Cashier employee ID must be a positive integer and customer ID must be null or a positive integer' }));
+      return res.end(JSON.stringify({ message: 'Cashier employee ID must be a positive integer and customer ID must be null, omitted, or a positive integer' }));
     }
 
     if (!['Card', 'Cash', 'Giftcard'].includes(paymentMethod)) {
