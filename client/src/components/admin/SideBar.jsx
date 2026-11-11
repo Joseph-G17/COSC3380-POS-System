@@ -21,7 +21,7 @@ const SideBar = () => {
             key={entity}
             to={`/admin/manage/${entity}`}
           >
-            Manage {entity}
+            {entity === 'Returns' ? 'View' : 'Manage'} {entity}
           </NavLink>
         )}  
       </div>

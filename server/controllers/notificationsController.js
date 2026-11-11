@@ -1,32 +1,20 @@
 const Notifications = require('../models/notificationModel');
 
-// desc: Gets stock alerts and arrived shipments for the bell in the admin nav bar
+// desc: Gets the shipment and low stock messages the triggers wrote into the notifications table
 // route: GET /api/notifications
 async function getNotifications(req, res) {
   try {
-    const stock = await Notifications.findStockAlerts();
-    const shipments = await Notifications.findArrivedShipments();
+    const rows = await Notifications.findBellNotifications();
 
-    const notifications = [];
-
-    //out of stock and low stock go first since they matter most
-    stock.forEach((row) => {
-      const message = row.StockStatus === 'Out of Stock'
-        ? `${row.ItemName} is out of stock.`
-        : `${row.ItemName} is low on stock (${row.Stock} left).`;
-
-      //stock is in the key so a dismissed alert comes back if the stock changes again
-      notifications.push({ key: `stock-${row.InventoryID}-${row.Stock}`, InventoryID: row.InventoryID, Message: message, Date: null });
-    });
-
-    shipments.forEach((row) => {
-      notifications.push({
-        key: `shipment-${row.ShipmentID}`,
-        InventoryID: row.InventoryID,
-        Message: `${row.QuantityShipped} ${row.ItemName} arrived from ${row.SupplierName}.`,
-        Date: row.ArrivalDate
-      });
-    });
+    //the message text is exactly what the trigger wrote into the notifications table
+    const notifications = rows.map((row) => ({
+      key: `notification-${row.NotificationID}`,
+      NotificationID: row.NotificationID,
+      Type: row.NotificationType,
+      RelatedID: row.RelatedID,
+      Message: row.Message,
+      Date: row.CreatedAt
+    }));
 
     res.writeHead(200, {'Content-Type': 'application/json'});
     res.end(JSON.stringify(notifications));
@@ -37,6 +25,26 @@ async function getNotifications(req, res) {
   }
 }
 
+// desc: Clears a bell notification (sets IsRead) so it doesn't show again
+// route: PUT /api/notifications/:id
+async function readNotification(req, res, id) {
+  try {
+    const result = await Notifications.markBellNotificationRead(id);
+    if (result.affectedRows === 0) {
+      res.writeHead(404, {'Content-Type': 'application/json'});
+      return res.end(JSON.stringify({ message: `Notification ${id} Not Found`}));
+    }
+
+    res.writeHead(200, {'Content-Type': 'application/json'});
+    res.end(JSON.stringify({ message: `Notification ${id} cleared`}));
+  } catch (error) {
+    console.log(error);
+    res.writeHead(500, {'Content-Type': 'application/json'});
+    res.end(JSON.stringify({ message: 'Could not clear notification'}));
+  }
+}
+
 module.exports = {
-  getNotifications
+  getNotifications,
+  readNotification
 }

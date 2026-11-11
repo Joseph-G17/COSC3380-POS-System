@@ -1,37 +1,36 @@
 let { query } = require('../sqlConnecter');
 
-//same rule as the stockreport view, 0 is out and 10 or less is low
-function findStockAlerts(){
+//types the bell shows, all written by triggers:
+//Shipment = trg_Shipment_AfterInsert / AfterUpdate, LowStock = trg_Inventory_AfterUpdate
+const BELL_TYPES = ['Shipment', 'LowStock'];
+
+//trigger messages nobody has cleared yet
+function findBellNotifications(){
   const sql = `
-    SELECT inv.InventoryID,
-          it.ItemName,
-          inv.Stock,
-          CASE WHEN inv.Stock = 0 THEN 'Out of Stock' ELSE 'Low' END AS StockStatus
-    FROM Inventory inv
-    JOIN Items it ON it.ItemID = inv.ItemID
-    WHERE inv.Stock <= 10
-    ORDER BY inv.Stock`;
-  return query(sql);
+    SELECT NotificationID,
+          NotificationType,
+          Message,
+          RelatedID,
+          CreatedAt
+    FROM notifications
+    WHERE NotificationType IN (?)
+      AND IsRead = 0
+    ORDER BY CreatedAt DESC, NotificationID DESC
+    LIMIT 50`;
+  return query(sql, [BELL_TYPES]);
 }
 
-//shipments that trg_ShipmentAdded put into stock in the last 7 days
-function findArrivedShipments(){
+//clearing one in the bell marks it read so it stays gone for everyone
+function markBellNotificationRead(id){
   const sql = `
-    SELECT s.ShipmentID,
-          s.InventoryID,
-          it.ItemName,
-          s.SupplierName,
-          s.QuantityShipped,
-          s.ArrivalDate
-    FROM Shipments s
-    JOIN Inventory inv ON inv.InventoryID = s.InventoryID
-    JOIN Items it ON it.ItemID = inv.ItemID
-    WHERE s.ArrivalDate >= NOW() - INTERVAL 7 DAY
-    ORDER BY s.ArrivalDate DESC`;
-  return query(sql);
+    UPDATE notifications
+    SET IsRead = 1
+    WHERE NotificationID = ?
+      AND NotificationType IN (?)`;
+  return query(sql, [id, BELL_TYPES]);
 }
 
 module.exports = {
-  findStockAlerts,
-  findArrivedShipments
+  findBellNotifications,
+  markBellNotificationRead
 }

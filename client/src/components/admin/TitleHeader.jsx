@@ -7,7 +7,8 @@ const TitleHeader = ({entity, report, showAdd = false, onCreated = () =>{} }) =>
   return (
     <div className='inline-flex p-10'>
       <h2 className='admin-entity-header text-3xl pr-4 underline'>{entity || report }</h2>
-      {showAdd && entity != 'Orders' &&
+      {/*orders and returns are view only, they get made at the register / online store*/}
+      {showAdd && entity != 'Orders' && entity != 'Returns' &&
       <button className="button-highlight p-1 border-2" onClick={() => setShowForm(true)}> 
           Add New 
       </button>}
