@@ -4,6 +4,7 @@ import { getSaleSchedule } from "./saleSchedule";
 const AnnouncementBar = () => {
   const [sales, setSales] = useState([]);
   const [now, setNow] = useState(Date.now);
+  const [deals, setDeals] = useState([]);
 
   // Refresh on entry and once a minute; cancel older requests and stop after 10 seconds.
   useEffect(() => {
@@ -54,6 +55,26 @@ const AnnouncementBar = () => {
     };
   }, []);
 
+  //Load the seasonal deal messages that the database trigger saved
+  useEffect(function () {
+    async function loadDeals() {
+      try {
+        const response = await fetch("/api/season-deals");
+        if(!response.ok){
+          throw new Error("Unable to load season deals");
+        }
+        const data = await response.json();
+        if(Array.isArray(data)){
+          setDeals(data);
+        }
+      } catch {
+        //Hide the deal messages when they cannot be loaded
+        setDeals([]);
+      }
+    }
+    loadDeals();
+  }, []);
+
   const { activeSales, nextChangeAt } = getSaleSchedule(sales, now);
 
   useEffect(() => {
@@ -66,7 +87,7 @@ const AnnouncementBar = () => {
     return () => window.clearTimeout(timerId);
   }, [nextChangeAt, now]);
 
-  if (activeSales.length === 0) {
+  if (activeSales.length === 0 && deals.length === 0) {
     return null;
   }
 
@@ -82,6 +103,14 @@ const AnnouncementBar = () => {
           return (
             <li key={sale.SaleID} className="min-w-0 max-w-full" style={{ textWrap: "wrap", overflowWrap: "anywhere" }}>
               {sale.SaleName}
+            </li>
+          );
+        })}
+        {/*Seasonal deal messages from the trigger*/}
+        {deals.map(function (deal) {
+          return (
+            <li key={"deal-" + deal.NotificationID} className="min-w-0 max-w-full" style={{ textWrap: "wrap", overflowWrap: "anywhere" }}>
+              {deal.Message}
             </li>
           );
         })}

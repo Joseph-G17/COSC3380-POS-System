@@ -1,5 +1,6 @@
 let employees = require('../testdata/items');
-let { query, getConnection } = require('../sqlConnecter')
+let { query, getConnection } = require('../sqlConnecter');
+const { findCurrentSeason } = require('./seasonModel');
 const { writeDataToFile } = require('../utilities');
 const bcrypt = require('bcryptjs');
 
@@ -10,13 +11,26 @@ function findAll(){
   })
 }
 */
-function findall(entity){
+async function findall(entity){
   if (entity === 'Items') {
-    const sql = `SELECT Items.*, COALESCE(SUM(Inventory.Stock), 0) AS Stock
+    //Find this season so the store and the register show the deal price
+    const season = await findCurrentSeason();
+    const seasonId = season ? season.SeasonID : 0;
+    const sql = `SELECT Items.*, COALESCE(SUM(Inventory.Stock), 0) AS Stock, sd.NewItemPrice AS DealPrice
       FROM Items
       LEFT JOIN Inventory ON Inventory.ItemID = Items.ItemID
-      GROUP BY Items.ItemID`;
-    return query(sql);
+      LEFT JOIN \`Seasonal Deals\` sd ON sd.ItemID = Items.ItemID AND sd.SeasonID = ?
+      GROUP BY Items.ItemID, sd.NewItemPrice`;
+    const rows = await query(sql, [seasonId]);
+    for(const row of rows){
+      //Keep the normal price, then sell at the deal price when there is one
+      row.RegularPrice = row.ItemPrice;
+      if(row.DealPrice !== null){
+        row.ItemPrice = row.DealPrice;
+        row.SeasonName = season.SeasonName;
+      }
+    }
+    return rows;
   }
 
   const sql = `SELECT * FROM ${entity}`;
@@ -187,9 +201,15 @@ async function createOrder({ employeeId, customerId, paymentMethod, items, order
     }
 
     const itemPlaceholders = sortedItems.map(() => '?').join(', ');
+    //Charge this season's deal price when the item has one, so checkout matches the store
+    const season = await findCurrentSeason();
+    const seasonId = season ? season.SeasonID : 0;
     const itemRows = await runQuery(
-      `SELECT \`ItemID\`, \`ItemPrice\` FROM \`Items\` WHERE \`ItemID\` IN (${itemPlaceholders}) ORDER BY \`ItemID\` FOR UPDATE`,
-      sortedItems.map((item) => item.itemId)
+      `SELECT i.ItemID, COALESCE(sd.NewItemPrice, i.ItemPrice) AS ItemPrice, sd.NewItemPrice IS NOT NULL AS HasDeal
+       FROM \`Items\` i
+       LEFT JOIN \`Seasonal Deals\` sd ON sd.ItemID = i.ItemID AND sd.SeasonID = ?
+       WHERE i.ItemID IN (${itemPlaceholders}) ORDER BY i.ItemID FOR UPDATE`,
+      [seasonId, ...sortedItems.map((item) => item.itemId)]
     );
     const pricesById = new Map(itemRows.map((row) => [Number(row.ItemID), Number(row.ItemPrice)]));
     let totalInCents = 0;
@@ -271,6 +291,10 @@ async function createOrder({ employeeId, customerId, paymentMethod, items, order
     //Save the code on the order, so the next order knows it was used
     if(discountId !== null){
       fields.DiscountID = discountId;
+    }
+    //Save the season on the order when a deal price was used
+    if(itemRows.some((row) => Number(row.HasDeal) === 1)){
+      fields.SeasonID = seasonId;
     }
     fields.OrderDate = houstonNow();
     const orderResult = await runQuery('INSERT INTO `Orders` SET ?', [fields]);
