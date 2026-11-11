@@ -3,12 +3,13 @@ import { useParams } from "react-router-dom"
 import { useState, useEffect } from "react";
 
 const FILTERS = {
+  //one row per day; the order type / payment split is in the columns now
   SalesSummary: [
     { name: 'from', label: 'From date', type: 'date' },
     { name: 'to', label: 'To date', type: 'date' },
-    { name: 'orderType', label: 'Order Type', type: 'select', column: 'OrderType' },
-    { name: 'paymentMethod', label: 'Payment', type: 'select', column: 'PaymentMethod' },
-    { name: 'minSales', label: 'Min Total Sales ($)', type: 'number', placeholder: 'e.g. 10' }
+    { name: 'minSales', label: 'Min Gross Sales ($)', type: 'number', placeholder: 'e.g. 10' },
+    { name: 'minNet', label: 'Min Net Sales ($)', type: 'number', placeholder: 'e.g. 10' },
+    { name: 'minReturns', label: 'Min Returns ($)', type: 'number', placeholder: 'e.g. 1' }
   ],
   ItemPerformance: [
     { name: 'itemName', label: 'Item', type: 'text', column: 'ItemName', placeholder: 'e.g. Milk' },
@@ -22,12 +23,19 @@ const FILTERS = {
     { name: 'membership', label: 'Membership', type: 'select', column: 'Membership' },
     { name: 'minSpent', label: 'Min Total Spent ($)', type: 'number', placeholder: 'e.g. 50' },
     { name: 'from', label: 'Last order from', type: 'date' },
-    { name: 'to', label: 'Last order to', type: 'date' }
+    { name: 'to', label: 'Last order to', type: 'date' },
+    { name: 'minCanceled', label: 'Canceled Orders At Least', type: 'number', placeholder: 'e.g. 1' }
   ],
 };
 
 //columns that should show as $12.50
-const MONEY_COLUMNS = ['TotalSales', 'AvgOrder', 'Revenue', 'ItemPrice', 'TotalReturned', 'TotalSpent', 'SalesPerHour'];
+const MONEY_COLUMNS = ['TotalSales', 'AvgOrder', 'Revenue', 'ItemPrice', 'TotalReturned', 'TotalSpent', 'SalesPerHour',
+  'ReturnTotal', 'NetSales', 'InStoreSales', 'PickupSales', 'DeliverySales', 'CardSales', 'CashSales', 'GiftcardSales', 'NetSpent'];
+
+//columns that should show as 12.5%
+const PERCENT_COLUMNS = ['ReturnRatePct'];
+
+const showPercent = (value) => `${Number(value).toLocaleString(undefined, { maximumFractionDigits: 1 })}%`;
 
 //"TotalSales" -> "Total Sales"
 const niceHeader = (header) => header.replace(/([a-z])([A-Z])/g, '$1 $2');
@@ -35,6 +43,7 @@ const niceHeader = (header) => header.replace(/([a-z])([A-Z])/g, '$1 $2');
 const showMoney = (value) => '$' + Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const showValue = (header, value) => {
+  if (PERCENT_COLUMNS.includes(header)) return value === null || value === undefined ? '—' : showPercent(value); //no sales = no rate
   if (value === null || value === undefined) return '';
   if (MONEY_COLUMNS.includes(header)) return showMoney(value);
   if (header.includes('Date')) return String(value).slice(0, 10); //2026-10-01T05:00:00.000Z -> 2026-10-01
@@ -226,7 +235,7 @@ const ReportsPage = () => {
               {summary.map((s) => (
                 <div key={s.label} className='border-2 p-4 min-w-40'>
                   <p className='text-sm text-gray-500'>{s.label}</p>
-                  <p className='text-2xl'>{s.money ? showMoney(s.value) : s.value.toLocaleString()}</p>
+                  <p className='text-2xl'>{s.money ? showMoney(s.value) : s.percent ? showPercent(s.value) : s.value.toLocaleString()}</p>
                 </div>
               ))}
             </div>
