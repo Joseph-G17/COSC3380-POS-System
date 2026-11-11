@@ -1,4 +1,4 @@
-let { query } = require('../sqlConnecter');
+let { query, withTransaction } = require('../sqlConnecter');
 
 const ID_FIELDS = {
   Employees: 'EmployeeID',
@@ -170,6 +170,23 @@ function deleteOne(entity, id){
   return query(`DELETE FROM ?? WHERE ${where.sql}`, [entity, ...where.params]);
 }
 
+//an order's items have to go first (ordered items -> orders is ON DELETE RESTRICT),
+//both in one transaction so it's all or nothing.
+//an order with returns is kept, returns are history and point at the order
+function deleteOrder(orderId){
+  return withTransaction(async (run) => {
+    const returns = await run('SELECT COUNT(*) AS n FROM `Returns` WHERE OrderID = ?', [orderId]);
+    if (Number(returns[0].n) > 0) {
+      const error = new Error('This order has returns, so it can\'t be deleted. Cancel it instead.');
+      error.statusCode = 409;
+      throw error;
+    }
+
+    await run('DELETE FROM `Ordered Items` WHERE OrderID = ?', [orderId]);
+    return run('DELETE FROM `Orders` WHERE OrderID = ?', [orderId]);
+  });
+}
+
 //the items inside one order, for the admin order page
 function findOrderItems(orderId){
   return query(`
@@ -200,6 +217,7 @@ module.exports = {
   findOne,
   updateOne,
   deleteOne,
+  deleteOrder,
   findOrderItems,
   getColumns,
   insertOne
