@@ -196,6 +196,8 @@ const CashierCheckout = () => {
       setAppliedDiscount(null);
       setDiscountSearch('');
       setSuccessMessage(`Order #${result.OrderID} was created. Total: ${formatPrice(Math.round(Number(result.OrderTotal) * 100))}`);
+      //the sale may have set off the low/out of stock trigger, so the bell reloads now instead of in 30s
+      window.dispatchEvent(new Event('saveso-notifications-refresh'));
     } catch (checkoutError) {
       setError(checkoutError instanceof Error ? checkoutError.message : 'Could not complete checkout');
     } finally {

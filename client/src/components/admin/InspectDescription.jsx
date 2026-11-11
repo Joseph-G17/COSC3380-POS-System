@@ -109,6 +109,8 @@ const InspectDescription = ({entity, id, idField}) => {
 
       setInspectedData([{...row, ...changes}]);
       setMessage('Saved!');
+      //stock/shipment changes can set off the notification triggers
+      if (entity === 'Inventory' || entity === 'Shipments') window.dispatchEvent(new Event('saveso-notifications-refresh'));
 
       //picked a different sale/season or item: the record's id changed, so move to its new address
       const keys = TWO_COLUMN_KEYS[entity];

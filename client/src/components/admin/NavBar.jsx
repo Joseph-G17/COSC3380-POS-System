@@ -42,9 +42,20 @@ const NavBar = ({ employee }) => {
   useEffect(() => {
     loadNotifications();
     const interval = setInterval(loadNotifications, 30000); //checks for new ones every 30 seconds
+    //pages that change stock (checkout, saving inventory/shipments) ask for a reload right away
+    window.addEventListener('saveso-notifications-refresh', loadNotifications);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('saveso-notifications-refresh', loadNotifications);
+    };
   }, []);
+
+  //opening the bell always shows the latest
+  const toggleNotifications = () => {
+    if (!showNotifications) loadNotifications();
+    setShowNotifications(!showNotifications);
+  }
 
   //hides it from the list and the count
   const dismissNotification = async (n) => {
@@ -74,7 +85,7 @@ const NavBar = ({ employee }) => {
           </search>
           <section className='flex space-x-4 ml-auto'>
             <div className="relative">
-              <button className="p-1 border rounded button-highlight" onClick={() => setShowNotifications(!showNotifications)}>
+              <button className="p-1 border rounded button-highlight" onClick={toggleNotifications}>
                 <img width="24" height="24" src="https://img.icons8.com/material-rounded/24/alarm.png" alt="alarm"/>
                 <p className="absolute text-red-400">{visible.length}</p>
               </button>
