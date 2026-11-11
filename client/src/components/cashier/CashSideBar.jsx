@@ -4,7 +4,7 @@ import { Link, useSearchParams } from "react-router-dom";
 const CashSideBar = () => {
   const [, setSearchParams] = useSearchParams();
 
-  const entities = ['Checkout', 'Orders', 'Items', 'Discounts', 'Sales', 'Returns'];
+  const entities = ['Checkout', 'Orders', 'Items', 'Discounts', 'Sales'];
 
   return (
     <aside className='row-span-2 border'>
