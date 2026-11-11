@@ -3,7 +3,6 @@ let { query, getConnection } = require('../sqlConnecter');
 const { findCurrentSeason } = require('./seasonModel');
 const { writeDataToFile } = require('../utilities');
 const bcrypt = require('bcryptjs');
-const GUEST_CUSTOMER_ID = 2;
 
 /* BEFORE QUERY PROMISE 
 function findAll(){
@@ -168,8 +167,6 @@ function houstonNow() {
 async function createOrder({ employeeId, customerId, paymentMethod, items, orderType = 'In-Store',
   deliveryAddress = null, discountCode = null }) {
   const onlineOrder = orderType === 'Pickup' || orderType === 'Delivery';
-  const isGuestCheckout = customerId === undefined;
-  const orderCustomerId = isGuestCheckout ? GUEST_CUSTOMER_ID : customerId;
   const connection = await getConnection();
   const runQuery = (sql, params = []) => new Promise((resolve, reject) => {
     connection.query(sql, params, (error, results) => {
@@ -183,13 +180,13 @@ async function createOrder({ employeeId, customerId, paymentMethod, items, order
       connection.beginTransaction((error) => error ? reject(error) : resolve());
     });
 
-    if (orderCustomerId !== null) {
+    if (customerId !== null) {
       const customers = await runQuery(
         'SELECT CustomerID FROM Customers WHERE CustomerID = ?',
-        [orderCustomerId]
+        [customerId]
       );
       if (customers.length === 0) {
-        const error = new Error(isGuestCheckout ? 'Guest account was not found' : 'Customer ID was not found');
+        const error = new Error('Customer ID was not found');
         error.statusCode = 404;
         throw error;
       }
@@ -255,10 +252,10 @@ async function createOrder({ employeeId, customerId, paymentMethod, items, order
         throw error;
       }
       discountId = discounts[0].DiscountID;
-      if (!isGuestCheckout && orderCustomerId !== null) {
+      if (customerId !== null) {
         const usedOrders = await runQuery(
           'SELECT OrderID FROM Orders WHERE CustomerID = ? AND DiscountID = ?',
-          [orderCustomerId, discountId]
+          [customerId, discountId]
         );
         if(usedOrders.length > 0){
           const error = new Error('You have used this code before');
@@ -284,11 +281,11 @@ async function createOrder({ employeeId, customerId, paymentMethod, items, order
       inventoryByItemId.set(itemId, itemInventory);
     }
 
-    const fields = { EmployeeID: employeeId, CustomerID: orderCustomerId, OrderType: orderType,
+    const fields = { EmployeeID: employeeId, CustomerID: customerId, OrderType: orderType,
       OrderTotal: (totalInCents / 100).toFixed(2), PaymentMethod: paymentMethod };
     //Delivery: save the typed address in Addresses first, then link it to the order
     if(orderType === 'Delivery'){
-      const address = await runQuery('INSERT INTO Addresses (CustomerID, Address, AddressType) VALUES (?, ?, ?)', [orderCustomerId, deliveryAddress, 'Shipping']);
+      const address = await runQuery('INSERT INTO Addresses (CustomerID, Address, AddressType) VALUES (?, ?, ?)', [customerId, deliveryAddress, 'Shipping']);
       fields.ShippingAddressID = address.insertId;
     }
     //Save the code on the order, so the next order knows it was used
@@ -344,7 +341,7 @@ async function createOrder({ employeeId, customerId, paymentMethod, items, order
 
     return {
       OrderID: orderResult.insertId,
-      CustomerID: orderCustomerId,
+      CustomerID: customerId,
       OrderTotal: fields.OrderTotal,
       ...(onlineOrder ? { orderType, deliveryAddress, paymentMethod } : {}),
     };

@@ -35,6 +35,7 @@ const CashierCheckout = () => {
   const [discountCodeError, setDiscountCodeError] = useState('');
   const [discountsError, setDiscountsError] = useState('');
   const [areDiscountsLoading, setAreDiscountsLoading] = useState(true);
+  const [customerId, setCustomerId] = useState('');
   const [employeeId] = useState(getCashierEmployeeId);
   const [paymentMethod, setPaymentMethod] = useState('Cash');
   const [error, setError] = useState('');
@@ -181,6 +182,7 @@ const CashierCheckout = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           employeeId: Number(employeeId),
+          customerId: customerId.trim() ? Number(customerId) : 2,
           paymentMethod,
           discountCode: appliedDiscount?.Code ?? null,
           items: cart.map(({ item, quantity }) => ({
@@ -199,6 +201,7 @@ const CashierCheckout = () => {
           : item;
       }));
       setCart([]);
+      setCustomerId('');
       setAppliedDiscount(null);
       setDiscountSearch('');
       setSuccessMessage(`Order #${result.OrderID} was created. Total: ${formatPrice(Math.round(Number(result.OrderTotal) * 100))}`);
@@ -423,6 +426,20 @@ const CashierCheckout = () => {
           </div>
 
           <form className="mt-5 space-y-4 border-t pt-5" onSubmit={checkout}>
+            <div>
+              <label className="mb-1 block text-sm font-medium" htmlFor="customer-id">
+                Customer ID <span className="font-normal text-gray-500">(blank defaults to 2)</span>
+              </label>
+              <input
+                className="w-full rounded border px-3 py-2"
+                id="customer-id"
+                type="number"
+                min="1"
+                step="1"
+                value={customerId}
+                onChange={(event) => setCustomerId(event.target.value)}
+              />
+            </div>
             <div>
               <p className="text-sm font-medium">Cashier employee ID</p>
               <p className="mt-1 rounded border bg-gray-50 px-3 py-2" aria-live="polite">
