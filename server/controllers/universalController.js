@@ -111,8 +111,7 @@ async function updateEntity(req, res, entity, id) {
     const blocked = checkRules('update', entity, rows[0], changes);
     if (blocked) return refuse(res, blocked);
 
-    //canceling stamps the time on the server so the admin can't pick it
-    if (entity === 'Orders') changes.CanceledDate = new Date();
+    //The cancel trigger in the database saves CanceledDate in Houston time
 
     await Universal.updateOne(entity, id, changes);
 
