@@ -69,6 +69,10 @@ async function getCustomerOrderHistory(customerId) {
            DATE_FORMAT(o.OrderDate, '%Y-%m-%d %H:%i:%s') AS orderDate,
            o.OrderType AS orderType, o.OrderTotal AS total,
            o.OrderStatus AS orderStatus, DATE_FORMAT(o.CanceledDate, '%Y-%m-%d %H:%i:%s') AS canceledDate,
+           (SELECT n.Message FROM notifications n
+             WHERE n.RecipientCustomerID = o.CustomerID AND n.RelatedID = o.OrderID
+               AND n.NotificationType = 'OrderCancelation'
+             ORDER BY n.NotificationID DESC LIMIT 1) AS cancelMessage,
            a.Address AS deliveryAddress, d.DiscountCode AS discountCode, d.DiscountPercent AS discountPercent,
            CAST(oi.ItemID AS CHAR) AS itemId, i.ItemName AS name,
            oi.QuantityOrdered AS quantity, oi.ItemPrice AS unitPrice
@@ -88,6 +92,7 @@ async function getCustomerOrderHistory(customerId) {
       order = {
         orderId: row.orderId, orderDate: row.orderDate, orderType: row.orderType,
         orderStatus: row.orderStatus, canceledDate: row.canceledDate,
+        cancelMessage: row.cancelMessage,
         total: Number(row.total), deliveryAddress: row.deliveryAddress,
         discountCode: row.discountCode, discountPercent: row.discountPercent, items: [],
       };

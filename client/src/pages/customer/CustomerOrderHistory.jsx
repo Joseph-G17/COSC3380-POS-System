@@ -38,6 +38,10 @@ function OrderList({ orders }) {
             {order.canceledDate && (
               <p className="mt-2 text-sm text-red-700 text-wrap!">Canceled on {order.canceledDate}</p>
             )}
+            {/*Show the message the cancel trigger saved for this customer*/}
+            {order.cancelMessage && (
+              <p className="mt-2 text-sm text-red-700 text-wrap!">{order.cancelMessage}</p>
+            )}
             {order.discountCode && (
               <p className="mt-2 text-sm text-gray-600 text-wrap!">Discount {order.discountCode} ({order.discountPercent}% off)</p>
             )}
