@@ -5,7 +5,7 @@ const ENTITIES = ['Employees', 'Orders', 'Items', 'Item Categories', 'Discounts'
   'Seasons', 'Sale Items', 'Seasonal Deals'];
 
 //history the admin can look at but not rewrite:
-//- Orders: view only, the one change allowed is canceling a completed order
+//- Orders: can't be edited except canceling a completed order; can be deleted (with its items)
 //- Returns: view only
 //- Shipments: editable/deletable until they arrive, then view only
 //returns a message when the action isn't allowed, null when it is
@@ -14,7 +14,7 @@ function checkRules(action, entity, row, changes) {
 
   if (entity === 'Orders') {
     if (action === 'create') return 'Orders are made at the register or online store, not here.';
-    if (action === 'delete') return 'Orders cannot be deleted. Cancel the order instead.';
+    if (action === 'delete') return null; //deleteOrder removes its items too
     const fields = Object.keys(changes);
     if (fields.length !== 1 || fields[0] !== 'OrderStatus' || changes.OrderStatus !== 'Canceled') {
       return 'Orders are view only. The only change allowed is canceling the order.';
@@ -142,12 +142,19 @@ async function deleteEntity(req, res, entity, id) {
     const blocked = checkRules('delete', entity, rows[0]);
     if (blocked) return refuse(res, blocked);
 
-    await Universal.deleteOne(entity, id);
+    if (entity === 'Orders') await Universal.deleteOrder(id); //takes its ordered items with it
+    else await Universal.deleteOne(entity, id);
 
     res.writeHead(200, {'Content-Type': 'application/json'});
     res.end(JSON.stringify({ message: `${entity} ${id} removed!`}));
   } catch (error) {
     console.log(error);
+
+    //rules from the model, like an order that has returns
+    if (error.statusCode) {
+      res.writeHead(error.statusCode, {'Content-Type': 'application/json'});
+      return res.end(JSON.stringify({ message: error.message }));
+    }
 
     // 1451: another table still points at this row (ON DELETE RESTRICT)
     if (error.errno === 1451) {

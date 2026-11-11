@@ -131,7 +131,9 @@ const InspectDescription = ({entity, id, idField}) => {
     const target = departments.find((d) => String(d.DepartmentID) === String(moveTo));
     const prompt = target
       ? `Move this department's employees to ${target.DepartmentName} and delete it? This cannot be undone.`
-      : `Delete this ${entity} record? This cannot be undone.`;
+      : entity === 'Orders'
+        ? `Delete order #${id} and all of its items? This cannot be undone.`
+        : `Delete this ${entity} record? This cannot be undone.`;
     if (!(await ask(prompt, { confirmText: 'Delete', cancelText: 'Cancel' }))) return;
     try{
       const query = entity === 'Departments' && moveTo ? `?moveTo=${moveTo}` : '';
@@ -178,7 +180,7 @@ const InspectDescription = ({entity, id, idField}) => {
   const arrived = entity === 'Shipments' && row.ArrivalDate !== null && row.ArrivalDate !== undefined;
   const readOnly = entity === 'Orders' || entity === 'Returns' || arrived;
   const readOnlyNote = {
-    Orders: row.OrderStatus === 'Canceled' ? 'This order is canceled.' : 'Orders are view only. You can cancel a completed order.',
+    Orders: row.OrderStatus === 'Canceled' ? 'This order is canceled. You can still delete it.' : 'Orders can\'t be edited. You can cancel or delete the order.',
     Returns: 'Returns are view only.',
     Shipments: 'This shipment has arrived and can no longer be edited or deleted.'
   }[entity];
@@ -234,9 +236,12 @@ const InspectDescription = ({entity, id, idField}) => {
         </div>
       )}
 
-      {entity === 'Orders' && row.OrderStatus !== 'Canceled' && (
+      {entity === 'Orders' && (
         <div className="flex space-x-2 pt-4">
-          <button className='button-highlight border px-2 text-red-600' onClick={handleCancelOrder}>Cancel Order</button>
+          {row.OrderStatus !== 'Canceled' && (
+            <button className='button-highlight border px-2 text-red-600' onClick={handleCancelOrder}>Cancel Order</button>
+          )}
+          <button className='button-highlight border px-2' onClick={handleDelete}>Delete Order</button>
         </div>
       )}
 
