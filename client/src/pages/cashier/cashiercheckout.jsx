@@ -182,7 +182,7 @@ const CashierCheckout = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           employeeId: Number(employeeId),
-          customerId: customerId.trim() ? Number(customerId) : 2,
+          customerId: customerId ? Number(customerId) : null,
           paymentMethod,
           discountCode: appliedDiscount?.Code ?? null,
           items: cart.map(({ item, quantity }) => ({
@@ -428,7 +428,7 @@ const CashierCheckout = () => {
           <form className="mt-5 space-y-4 border-t pt-5" onSubmit={checkout}>
             <div>
               <label className="mb-1 block text-sm font-medium" htmlFor="customer-id">
-                Customer ID <span className="font-normal text-gray-500">(blank defaults to 2)</span>
+                Customer ID <span className="font-normal text-gray-500">(optional)</span>
               </label>
               <input
                 className="w-full rounded border px-3 py-2"
