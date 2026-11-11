@@ -5,6 +5,15 @@ const formatPrice = (priceInCents) => new Intl.NumberFormat('en-US', {
   currency: 'USD'
 }).format(priceInCents / 100);
 
+const formatDateOnly = (value) => {
+  if (typeof value !== 'string') return value ?? '—';
+  const datePart = value.match(/^\d{4}-\d{2}-\d{2}/)?.[0];
+  if (datePart) return datePart;
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString();
+};
+
 const getItemName = (item) => item.ItemName || item.ItemDescription || `Item ${item.ItemID}`;
 
 const getCashierEmployeeId = () => {
@@ -378,7 +387,7 @@ const CashierCheckout = () => {
                       {discount.Item != null && ` · ${discount.Item}`}
                     </p>
                     {discount.ExpirationDate && (
-                      <p className="text-gray-500">Expires {discount.ExpirationDate}</p>
+                      <p className="text-gray-500">Expires {formatDateOnly(discount.ExpirationDate)}</p>
                     )}
                   </li>
                 ))}
