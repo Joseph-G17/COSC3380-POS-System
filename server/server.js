@@ -10,7 +10,7 @@ const { getNotifications, readNotification } = require('./controllers/notificati
 const {adjustItemStock, createOrder, loginEmployee, getItems } = require('./controllers/itemController');
 
 // Load the customer handlers; their specific routes must precede generic entity routes.
-const { getProducts } = require('./controllers/OnlineStoreController');
+const { getProducts, getSeasonDeals } = require('./controllers/OnlineStoreController');
 const { getCategories } = require('./controllers/categoriesController');
 const {
   signupCustomer,
@@ -96,6 +96,10 @@ const handler = (req, res) => {
   // ProductList and Sidebar need these customer APIs before generic table matching.
   else if(req.url === '/api/products' && req.method === 'GET'){
     getProducts(req, res);
+  }
+  else if(req.url === '/api/season-deals' && req.method === 'GET'){
+    //AnnouncementBar shows the seasonal deal messages from the trigger
+    getSeasonDeals(req, res);
   }
   else if(req.url === '/api/categories' && req.method === 'GET'){
     getCategories(req, res);

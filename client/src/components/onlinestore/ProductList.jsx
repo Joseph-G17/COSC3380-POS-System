@@ -45,9 +45,18 @@ const ProductList = ({
             <p style={{ textWrap: "wrap", overflowWrap: "anywhere" }}>
               {product.ItemName}
             </p>
-            <p>
-              ${(Math.round(Number(product.ItemPrice) * 100) / 100).toFixed(2)}
-            </p>
+            {/*Show the deal price next to the regular price when the item is on sale this season*/}
+            {product.SeasonName ? (
+              <p>
+                <span className="font-medium text-red-700">${Number(product.ItemPrice).toFixed(2)}</span>{" "}
+                <span className="text-gray-500 line-through">${Number(product.RegularPrice).toFixed(2)}</span>{" "}
+                <span className="text-sm">({product.SeasonName} deal)</span>
+              </p>
+            ) : (
+              <p>
+                ${(Math.round(Number(product.ItemPrice) * 100) / 100).toFixed(2)}
+              </p>
+            )}
             {/*Show "Out of stock" instead of "In stock: 0"*/}
             {Number(product.Stock) > 0 ? (
               <p>In stock: {product.Stock}</p>
