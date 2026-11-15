@@ -4,14 +4,14 @@ import { useState, useEffect } from "react";
 
 const FILTERS = {
   //one row per day; the order type / payment split is in the columns now
-  SalesSummary: [
+  RevenueReport: [
     { name: 'from', label: 'From date', type: 'date' },
     { name: 'to', label: 'To date', type: 'date' },
     { name: 'minSales', label: 'Min Gross Sales ($)', type: 'number', placeholder: 'e.g. 10' },
     { name: 'minNet', label: 'Min Net Sales ($)', type: 'number', placeholder: 'e.g. 10' },
     { name: 'minReturns', label: 'Min Returns ($)', type: 'number', placeholder: 'e.g. 1' }
   ],
-  ItemPerformance: [
+  ItemSalesReport: [
     { name: 'itemName', label: 'Item', type: 'text', column: 'ItemName', placeholder: 'e.g. Milk' },
     { name: 'category', label: 'Category', type: 'select', column: 'Category' },
     { name: 'minSold', label: 'Units Sold At Least', type: 'number', placeholder: 'e.g. 5' },
@@ -30,7 +30,8 @@ const FILTERS = {
 
 //columns that should show as $12.50
 const MONEY_COLUMNS = ['TotalSales', 'AvgOrder', 'Revenue', 'ItemPrice', 'TotalReturned', 'TotalSpent', 'SalesPerHour',
-  'ReturnTotal', 'NetSales', 'InStoreSales', 'PickupSales', 'DeliverySales', 'CardSales', 'CashSales', 'GiftcardSales', 'NetSpent'];
+  'ReturnTotal', 'NetSales', 'InStoreSales', 'PickupSales', 'DeliverySales', 'CardSales', 'CashSales', 'GiftcardSales', 'NetSpent',
+  'OrderTotal', 'PricePaid', 'LineTotal'];
 
 //columns that should show as 12.5%
 const PERCENT_COLUMNS = ['ReturnRatePct'];
@@ -63,6 +64,8 @@ const ReportsPage = () => {
   const [description, setDescription] = useState('');
   const [summary, setSummary] = useState([]);
   const [shown, setShown] = useState(false); //results stay hidden until Apply is clicked
+  const [sources, setSources] = useState([]); //the records the report rows were added up from
+  const [showSources, setShowSources] = useState(false); //source data is closed until clicked
 
   //show = false loads the report quietly (for the filter dropdowns) without displaying it
   const loadData = async (currentFilters, show = true) => {
@@ -70,6 +73,7 @@ const ReportsPage = () => {
       if (currentFilters.from && currentFilters.to && currentFilters.from > currentFilters.to) {
         setRows([]);
         setSummary([]);
+        setSources([]);
         setMessage('"From" must be before "To".');
         setShown(show);
         return;
@@ -94,6 +98,7 @@ const ReportsPage = () => {
       setTitle(data.title);
       setDescription(data.description);
       setSummary(data.summary);
+      setSources(data.sources || []);
       setApplied(count);
       setMessage('');
       setLoaded(true);
@@ -102,6 +107,7 @@ const ReportsPage = () => {
       console.log(error);
       setRows([]);
       setSummary([]);
+      setSources([]);
       setMessage(error.message);
       setShown(true); //always show load errors
     }
@@ -112,6 +118,8 @@ const ReportsPage = () => {
     setRows([]);
     setAllRows([]);
     setSummary([]);
+    setSources([]);
+    setShowSources(false);
     setTitle('');
     setDescription('');
     setApplied(0);
@@ -258,6 +266,48 @@ const ReportsPage = () => {
               </div>
             ))}
           </div>
+
+          {/*where the numbers come from: every order/return/line behind the rows above*/}
+          {sources.length > 0 && rows.length > 0 && (
+            <div className='px-4 py-6'>
+              <button className='button-highlight p-1 border-2' onClick={() => setShowSources(!showSources)}>
+                {showSources ? '▾ Hide source data' : '▸ Show source data'}
+                {' '}({sources.reduce((n, s) => n + s.rows.length, 0)} records)
+              </button>
+
+              {showSources && sources.map((section) => {
+                const sourceHeaders = section.rows.length > 0 ? Object.keys(section.rows[0]) : [];
+                const grid = { gridTemplateColumns: `repeat(${sourceHeaders.length || 1}, minmax(0, 1fr))` };
+
+                return (
+                  <div key={section.title} className='pt-6'>
+                    <h2 className='text-xl underline pb-2'>{section.title}</h2>
+                    {section.rows.length === 0 ? (
+                      <p className='text-gray-500'>None for the rows above.</p>
+                    ) : (
+                      <>
+                        <div className='grid' style={grid}>
+                          {sourceHeaders.map((h) => (
+                            <h3 className='border-b font-bold px-3 py-2' key={h}>{niceHeader(h)}</h3>
+                          ))}
+                        </div>
+                        {section.rows.map((r, i) => (
+                          <div key={i} className='grid border-b' style={grid}>
+                            {sourceHeaders.map((h) => (
+                              <p key={h} className='px-3 py-2.5'>{showValue(h, r[h])}</p>
+                            ))}
+                          </div>
+                        ))}
+                      </>
+                    )}
+                    <p className='pt-2 text-sm text-gray-500'>
+                      {section.rows.length} record(s)
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </>
       )}
     </section>
