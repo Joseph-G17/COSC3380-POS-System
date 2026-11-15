@@ -1,10 +1,12 @@
 let { query } = require('../sqlConnecter');
 
-//each report reads its view in mysql by name (server/database/report_views.sql)
+//each report reads its view in mysql (server/database/report_views.sql)
+//view = the mysql view's name (the views keep their original names)
 //summary = the boxes at the top of the report, each one is a single number
 //money / percent = how the box is shown
 const REPORTS = {
-  SalesSummary: {
+  RevenueReport: {
+    view: 'salessummary',
     title: 'Revenue Report',
     description: 'How much money the store made each day. Sales count on the day of the order and returns on the day they were returned. Canceled orders are not counted.',
     orderBy: 'SaleDate DESC',
@@ -24,7 +26,8 @@ const REPORTS = {
       minReturns: { column: 'ReturnTotal', op: '>=' }
     }
   },
-  ItemPerformance: {
+  ItemSalesReport: {
+    view: 'itemperformance',
     title: 'Item Sales Report',
     description: 'Which items sell the most, how much money they bring in, and how often they come back. Canceled orders are not counted.',
     orderBy: 'UnitsSold DESC',
@@ -45,6 +48,7 @@ const REPORTS = {
     }
   },
   CustomerReport: {
+    view: 'customerreport',
     title: 'Customer Report',
     description: 'Who shops with us, how much they spend after returns, and when they last came in. Canceled orders are not counted toward spending.',
     orderBy: 'TotalSpent DESC',
@@ -68,12 +72,121 @@ const REPORTS = {
   }
 };
 
+//the individual records for order count and units sold in the Revenue Report and Item Sales Report
+/* 
+each list is limited to the rows the filtered report returned (keyColumn), and copies the
+same rules as the report's view so its totals add up to the summary boxes 
+*/
+
+const SOURCES = {
+  RevenueReport: {
+    keyColumn: 'SaleDate',
+    //DATE values come back as JS Dates at local midnight -> "YYYY-MM-DD"
+    toKey: (value) => (value instanceof Date ? value.toLocaleDateString('sv-SE') : String(value).slice(0, 10)),
+    sections: [
+      {
+        title: 'Orders',
+        //salessummary: orders that aren't canceled, counted on the day they were placed
+        sql: `
+          SELECT o.OrderID,
+                 DATE_FORMAT(o.OrderDate, '%Y-%m-%d %h:%i %p') AS OrderedAt,
+                 CONCAT(c.FirstName, ' ', c.LastName) AS Customer,
+                 COALESCE(CONCAT(e.FirstName, ' ', e.LastName), 'Former employee') AS Employee,
+                 o.OrderType,
+                 o.PaymentMethod,
+                 o.OrderTotal
+          FROM Orders o
+          JOIN Customers c ON c.CustomerID = o.CustomerID
+          LEFT JOIN Employees e ON e.EmployeeID = o.EmployeeID
+          WHERE o.OrderStatus <> 'Canceled'
+            AND CAST(o.OrderDate AS DATE) IN (?)
+          ORDER BY o.OrderDate DESC, o.OrderID DESC`
+      },
+      {
+        title: 'Returns',
+        //salessummary: returns on orders that aren't canceled, counted on the day they were returned
+        sql: `
+          SELECT rt.ReturnID,
+                 rt.OrderID,
+                 DATE_FORMAT(rt.ReturnDate, '%Y-%m-%d %h:%i %p') AS ReturnedAt,
+                 CONCAT(c.FirstName, ' ', c.LastName) AS Customer,
+                 COALESCE(CONCAT(e.FirstName, ' ', e.LastName), 'Former employee') AS ProcessedBy,
+                 rt.ReturnTotal
+          FROM \`Returns\` rt
+          JOIN Orders o ON o.OrderID = rt.OrderID
+          JOIN Customers c ON c.CustomerID = o.CustomerID
+          LEFT JOIN Employees e ON e.EmployeeID = rt.EmployeeID
+          WHERE o.OrderStatus <> 'Canceled'
+            AND CAST(rt.ReturnDate AS DATE) IN (?)
+          ORDER BY rt.ReturnDate DESC, rt.ReturnID DESC`
+      }
+    ]
+  },
+  ItemSalesReport: {
+    keyColumn: 'ItemID',
+    toKey: (value) => value,
+    sections: [
+      {
+        title: 'Units Sold',
+        //itemperformance: ordered items on orders that aren't canceled
+        sql: `
+          SELECT o.OrderID,
+                 DATE_FORMAT(o.OrderDate, '%Y-%m-%d %h:%i %p') AS OrderedAt,
+                 it.ItemName AS Item,
+                 CONCAT(c.FirstName, ' ', c.LastName) AS Customer,
+                 COALESCE(CONCAT(e.FirstName, ' ', e.LastName), 'Former employee') AS Employee,
+                 oi.QuantityOrdered AS Quantity,
+                 oi.ItemPrice AS PricePaid,
+                 oi.QuantityOrdered * oi.ItemPrice AS LineTotal
+          FROM \`Ordered Items\` oi
+          JOIN Orders o ON o.OrderID = oi.OrderID
+          JOIN Items it ON it.ItemID = oi.ItemID
+          JOIN Customers c ON c.CustomerID = o.CustomerID
+          LEFT JOIN Employees e ON e.EmployeeID = o.EmployeeID
+          WHERE o.OrderStatus <> 'Canceled'
+            AND oi.ItemID IN (?)
+          ORDER BY o.OrderDate DESC, o.OrderID DESC, it.ItemName`
+      },
+      {
+        title: 'Units Returned',
+        //itemperformance: every returned item (the view doesn't check the order's status here)
+        sql: `
+          SELECT rt.ReturnID,
+                 rt.OrderID,
+                 DATE_FORMAT(rt.ReturnDate, '%Y-%m-%d %h:%i %p') AS ReturnedAt,
+                 it.ItemName AS Item,
+                 CONCAT(c.FirstName, ' ', c.LastName) AS Customer,
+                 ri.QuantityReturned AS Quantity
+          FROM \`Returned Items\` ri
+          JOIN \`Returns\` rt ON rt.ReturnID = ri.ReturnID
+          JOIN Orders o ON o.OrderID = rt.OrderID
+          JOIN Items it ON it.ItemID = ri.ItemID
+          JOIN Customers c ON c.CustomerID = o.CustomerID
+          WHERE ri.ItemID IN (?)
+          ORDER BY rt.ReturnDate DESC, rt.ReturnID DESC, it.ItemName`
+      }
+    ]
+  }
+};
+
+//runs each source list for the days/items in the filtered report rows
+async function findSources(report, rows){
+  const source = SOURCES[report];
+  if (!source) return [];
+
+  const keys = [...new Set(rows.map((row) => source.toKey(row[source.keyColumn])))];
+  return Promise.all(source.sections.map(async (section) => ({
+    title: section.title,
+    rows: keys.length > 0 ? await query(section.sql, [keys]) : []
+  })));
+}
+
 async function findReport(report, filters){
   const reportFilters = REPORTS[report].filters;
   const conditions = [];
-  //the view's name, e.g. SalesSummary -> salessummary
+  //the view's name, e.g. RevenueReport -> salessummary
   const from = '??';
-  const params = [report];
+  const params = [REPORTS[report].view];
 
   for (const name in reportFilters) {
     const value = filters[name];
@@ -113,11 +226,13 @@ async function findReport(report, filters){
     title: REPORTS[report].title,
     description: REPORTS[report].description,
     summary,
-    rows
+    rows,
+    sources: await findSources(report, rows) //[] for reports without source lists
   };
 }
 
 module.exports = {
   REPORTS,
-  findReport
+  findReport,
+  findSources
 }

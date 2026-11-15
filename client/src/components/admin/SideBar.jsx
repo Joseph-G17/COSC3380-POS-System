@@ -5,9 +5,9 @@ const SideBar = () => {
 
   //Returns is view only, so it sits at the bottom
   const entities = ['Employees', 'Departments', 'Orders', 'Items', 'Item Categories', 'Discounts', 'Sales', 'Sale Items', 'Seasons', 'Seasonal Deals', 'Inventory', 'Shipments', 'Customers', 'Returns'];
-  const reports = ['SalesSummary', 'ItemPerformance', 'CustomerReport'];
-  //what the user sees instead of the view name
-  const reportNames = { SalesSummary: 'Revenue', ItemPerformance: 'Item Sales', CustomerReport: 'Customer' };
+  const reports = ['RevenueReport', 'ItemSalesReport', 'CustomerReport'];
+  //what the user sees in the sidebar
+  const reportNames = { RevenueReport: 'Revenue', ItemSalesReport: 'Item Sales', CustomerReport: 'Customer' };
 
   return (
     <aside className='row-span-2 border h-screen overflow-y-auto'>
