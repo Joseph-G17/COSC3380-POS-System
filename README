@@ -8,3 +8,19 @@ Access POS/Admin pages through storefront: LOGIN -> 'Log in as staff member'
 -EMAIL: admin@saveso.com  PASSWORD: password (to access admin side)
 
 -EMAIL: ana.lopez@saveso.com PASSWORD: password (to access grocery/pos side)
+
+GenData:
+GenData is a standalone C# program that can be run to populate most* tables of the Database.
+It consists of predefined Sales, Seasons, Items, Sale & Season Discounts, Departments, etc.,
+and randomly generated data such as Employees, Customers & Addresses.
+
+To run the program open the solution file in a C# ide, and setup user secrets as follows:
+{
+    "DB_HOST": "saveso.mysql.database.azure.com",
+    "DB_PORT": "3306",
+    "DB_USER": "",
+    "DB_PASSWORD": "",
+    "DB_DATABASE": "saveso"
+}
+Replace the values of these fields with the information of the database to connect to.
+After doing so the program can be run to add data into the tables.
