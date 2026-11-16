@@ -1,4 +1,4 @@
-FROM STARTING LINK: https://saveso-client.vercel.app
+# ACCESS OUR WEBSITE: https://saveso-client.vercel.app
 
 Online Storefront is what appears when first loading this link:
 -Create login for new members, or login with existing credentials as a memeber (select username and password)
@@ -6,10 +6,39 @@ Online Storefront is what appears when first loading this link:
 Access POS/Admin pages through storefront: LOGIN -> 'Log in as staff member'
 -> ENTER:
 -EMAIL: admin@saveso.com  PASSWORD: password (to access admin side)
+-EMAIL: cashier@saveso.com PASSWORD: password (to access grocery/pos side)
 
--EMAIL: ana.lopez@saveso.com PASSWORD: password (to access grocery/pos side)
 
-GenData:
+# Hosting POS Locally:
+## Requirements:
+- Node.js 20.6 or newer
+- npm (Node Package Manager)
+- 'final database dump.sql' Imported to DBMS (MySQL 8)
+
+## Instructions:
+1. Install Dependencies in both Client/Server Directories: (in terminal)
+    - cd client -> npm install
+    - cd ../server -> npm install
+
+2. Create 'server/.env' (follow this format)
+    DB_HOST=<host, or 127.0.0.1 for local MySQL>
+    DB_PORT=3306 
+    DB_USER=<username>
+    DB_PASSWORD=<password>
+    DB_DATABASE=saveso
+
+3. Make sure Local Database Connection is Open
+
+4. Run it
+    # terminal 1
+    - cd server
+    - npm run dev      # API on http://localhost:5000
+
+    # terminal 2
+    - cd client
+    - npm run dev      # app on http://localhost:3000
+
+# GenData:
 GenData is a standalone C# program that can be run to populate most* tables of the Database.
 It consists of predefined Sales, Seasons, Items, Sale & Season Discounts, Departments, etc.,
 and randomly generated data such as Employees, Customers & Addresses.
