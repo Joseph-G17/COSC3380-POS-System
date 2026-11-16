@@ -1,0 +1,17 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.Data.SqlClient" Version="7.1.1" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.14" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="10.0.14" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.UserSecrets" Version="10.0.14" />
+    <PackageVersion Include="MySql.Data" Version="26.10.0" />
+    <PackageVersion Include="OdsReaderWriter" Version="1.0.14" />
+    <PackageVersion Include="PasswordGenerator" Version="3.0.0" />
+    <PackageVersion Include="RandomDataGenerator.Net" Version="1.0.19.1" />
+  </ItemGroup>
+</Project>
