@@ -1,10 +1,16 @@
-# ACCESS OUR WEBSITE: https://saveso-client.vercel.app
+#Description:
+SaveSo is a point of sale system for a grocery store. It has three parts. The online store is where customers sign up, 
+browse and search items, see sales and seasonal deals, and place orders for pickup or delivery. The cashier side is the
+register: employees clock in, ring up orders, apply discounts, and look up items, orders and sales. The admin side is 
+for managers and admins to manage the store's records (employees, items, inventory, shipments, sales and more), get 
+notified about shipments and low stock, and run reports on revenue, item sales and customers. The frontend is built with 
+React and the backend is a Node.js server connected to a MySQL database.
 
+# ACCESS OUR WEBSITE: https://saveso-client.vercel.app
 Online Storefront is what appears when first loading this link:
 -Create login for new members, or login with existing credentials as a memeber (select username and password)
 
-Access POS/Admin pages through storefront: LOGIN -> 'Log in as staff member'
--> ENTER:
+Access POS/Admin pages through storefront: LOGIN -> 'Log in as staff member' -> ENTER:
 -EMAIL: admin@saveso.com  PASSWORD: password (to access admin side)
 -EMAIL: cashier@saveso.com PASSWORD: password (to access grocery/pos side)
 
@@ -37,6 +43,55 @@ Access POS/Admin pages through storefront: LOGIN -> 'Log in as staff member'
     # terminal 2
     - cd client
     - npm run dev      # app on http://localhost:3000
+
+# Online Store Key Files (client/src):
+- layouts/OnlineStoreLayout.jsx: the frame for the store, checkout and profile pages. It keeps the cart, the search text, the selected categories and the stock, and passes them to the pages.
+- pages/onlinestore/OnlineStorePage.jsx: store page. Loads the categories and shows the sidebar and the product list.
+- pages/onlinestore/CheckoutPage.jsx: cart summary, pickup or delivery, discount code, places the order and shows the receipt.
+- components/onlinestore/Navbar.jsx: logo, search box, cart button, sign up / log in, customer name and log out.
+- components/onlinestore/Sidebar.jsx: category checkboxes.
+- components/onlinestore/ProductList.jsx: product cards with picture, price, deal price, stock and "Add to Cart".
+- components/onlinestore/productFilters.js: filters products by name and category.
+- components/onlinestore/Cart.jsx: cart panel with quantities and total.
+- components/onlinestore/cartStorage.js: saves the cart in this browser tab (sessionStorage) so a refresh keeps it. This is not the database.
+- components/onlinestore/AnnouncementBar.jsx: top bar that shows active sales and the seasonal deal messages.
+- components/onlinestore/saleSchedule.js: decides which sales are active now and when the bar should update.
+- pages/customer/CustomerSignupPage.jsx: sign up form.
+- pages/customer/CustomerLoginPage.jsx: login form for customers and staff.
+- pages/customer/CustomerProfilePage.jsx: customer info, edit profile, and the order history.
+- pages/customer/CustomerOrderHistory.jsx: list of the customer's orders with items, status, discount, delivery estimate, and the cancel message if an order was canceled.
+- pages/customer/customerSession.js: saves the logged-in customer in this browser tab.
+- pages/customer/deliveryEstimate.js: delivery date = order date + 1 day.
+
+# Cashier Key Files (client/src):
+- layouts/CashierMainLayout.jsx: Acts as the main layout for all cashier pages
+- components/cashier/CashNavBar.jsx: Reuses the existing admin navigation bar.
+- components/cashier/CashSideBar.jsx: Creates the left sidebar menu for the cashier. Provides navigation links to Checkout, Orders, Items, Discounts, and Sales.
+- pages/cashier/cashiercheckout.jsx: Main checkout page for processing customer transactions.
+- pages/cashier/cashieritems.jsx: Displays the inventory list.
+- pages/cashier/cashierorders.jsx: Lists recent orders.
+- pages/cashier/cashierviewdiscounts.jsx: Loads discount records and allows the cashier to switch between current and past discounts.
+- pages/cashier/cashierviewsales.jsx: Loads sales data and allows the cashier to view current and past sales campaigns.
+
+# Admin Key Files (client/src)
+- layouts/AdminLayout.jsx: acts as the main layout for all admin pages.
+- components/admin/SideBar.jsx: links to every table under "Manage" and to the three reports under "Data Reports".
+- components/admin/NavBar.jsx: top bar with the employee's name, log out, and the notification bell. The bell shows shipment and low stock messages, and clearing one marks it read in the database.
+- components/admin/DataSnippets.jsx: loads every row of the entity chosen and shows them as a list.
+- components/admin/AddNewEntity.jsx: popup form for adding a new row. It asks the server for the table's columns and builds the form from them.
+- pages/admin/InspectDataPage.jsx: the edit page for one record. Shows the header and the record's details.
+- components/admin/InspectDescription.jsx: the main edit form. Loads the record and its columns, only sends the fields that changed, and handles delete.
+- components/admin/formField.jsx: one input box for one database column. Picks a text box, number, date, dropdown or big text box based on the column type.
+- components/admin/fieldHelpers.js: turns id columns into dropdowns with names, marks required fields, and turns column names into labels.
+- pages/admin/ReportsPage.jsx: the reports page. Builds the filter boxes for each report, sends the filters to the server, and shows the summary boxes, the report table and the records behind the numbers. Formats money and percents.
+
+# Server Key Files (server)
+- server.js: the router for the whole backend. It looks at each request's URL and method and sends it to the right controller function. Customer routes are checked first, then the specific routes 
+(login, orders, notifications, reports, products), and then universal. 
+- sqlConnecter.js: the connection to MySQL. It reads the database login from .env and gives every model a query function. withTransaction and getConnection run several queries together so they all save or none of them do.
+- utilities.js: getPostData reads the JSON body sent with POST and PUT requests.
+- api/index.js and vercel.json: used when the app is hosted on Vercel. They send every /api request to server.js.
+- .env (not in the repo): the database host, port, username, password, and database name.
 
 # GenData:
 GenData is a standalone C# program that can be run to populate most* tables of the Database.
