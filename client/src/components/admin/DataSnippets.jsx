@@ -49,6 +49,8 @@ const DataSnippets = ({ entity, idField, refresh}) => {
           </h2>
         ))}
       </div>
+
+      {/* All Data Rows */}
       <div>
         {rows.map((row) => 
           <DataSnippet key={idFields.map((f) => row[f]).join('-')} entity={entity} idField={idField} row={row} headers={headers}/>

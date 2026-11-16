@@ -1,5 +1,6 @@
 const http = require('http');
 
+// admin
 const { getEmployeeLogin, updateEmployeeHours, getLoginInfo, updateLoginInfo } = require('./controllers/employeesController')
 const { getEntities, getEntity, updateEntity, deleteEntity, getEntityColumns, createEntity, getOrderItems } = require('./controllers/universalController');
 const { getReport } = require('./controllers/reportsController')
@@ -108,7 +109,7 @@ const handler = (req, res) => {
     // AnnouncementBar keeps its lowercase URL; use the shared controller's Sales entity.
     getEntities(req, res, 'Sales');
   }
-  //BELOW IS UNIVERSAL
+   //BELOW IS UNIVERSAL
   else if(req.url.match(/^\/api\/([A-Za-z ]+)$/) && req.method === 'GET'){
     const entity = req.url.split('/')[2];
     getEntities(req, res, entity);

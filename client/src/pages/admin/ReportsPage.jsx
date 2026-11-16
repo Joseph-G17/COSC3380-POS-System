@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom"
 import { useState, useEffect } from "react";
 
 const FILTERS = {
-  //one row per day; the order type / payment split is in the columns now
+  //maps report keys to an array of UI input definitions used to dynamically render filter forms
   RevenueReport: [
     { name: 'from', label: 'From date', type: 'date' },
     { name: 'to', label: 'To date', type: 'date' },
@@ -28,21 +28,29 @@ const FILTERS = {
   ],
 };
 
-//columns that should show as $12.50
+//columns that need to be formatted money wise
 const MONEY_COLUMNS = ['TotalSales', 'AvgOrder', 'Revenue', 'ItemPrice', 'TotalReturned', 'TotalSpent', 'SalesPerHour',
   'ReturnTotal', 'NetSales', 'InStoreSales', 'PickupSales', 'DeliverySales', 'CardSales', 'CashSales', 'GiftcardSales', 'NetSpent',
   'OrderTotal', 'PricePaid', 'LineTotal'];
 
-//columns that should show as 12.5%
+//columns that need to be formatted percent wise 
 const PERCENT_COLUMNS = ['ReturnRatePct'];
 
+//format for percentages
 const showPercent = (value) => `${Number(value).toLocaleString(undefined, { maximumFractionDigits: 1 })}%`;
 
-//"TotalSales" -> "Total Sales"
+//"TotalSales" -> "Total Sales", runs across whole string, $1 $2 is formatted string
 const niceHeader = (header) => header.replace(/([a-z])([A-Z])/g, '$1 $2');
 
+//format for money
 const showMoney = (value) => '$' + Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+
+/* 
+formats a raw cell value for display based on its column header.
+applies specialized formatting for percentages, currency, and ISO dates, 
+while converting nullish values to dashes or empty strings.
+*/
 const showValue = (header, value) => {
   if (PERCENT_COLUMNS.includes(header)) return value === null || value === undefined ? '—' : showPercent(value); //no sales = no rate
   if (value === null || value === undefined) return '';
@@ -53,21 +61,21 @@ const showValue = (header, value) => {
 
 const ReportsPage = () => {
   
-  const {report} =  useParams();
+  const {report} =  useParams(); //report comes from the route
   const [rows, setRows] = useState([]); //rows that match filters
-  const [allRows, setAllRows] = useState([]); //thw whole report
-  const [filters, setFilters] = useState({});
+  const [allRows, setAllRows] = useState([]); //the whole report
+  const [filters, setFilters] = useState({}); //filters selected
    const [applied, setApplied] = useState(0);  //how many filters the last apply used
-  const [message, setMessage] = useState('');
-  const [loaded, setLoaded] = useState(false);
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [summary, setSummary] = useState([]);
+  const [message, setMessage] = useState(''); //error or validation message, empty if none
+  const [loaded, setLoaded] = useState(false); //true once the first fetch finishes
+  const [title, setTitle] = useState(''); //report name sent by the server
+  const [description, setDescription] = useState(''); //short description under the title
+  const [summary, setSummary] = useState([]); //totals shown in the summary boxes
   const [shown, setShown] = useState(false); //results stay hidden until Apply is clicked
   const [sources, setSources] = useState([]); //the records the report rows were added up from
   const [showSources, setShowSources] = useState(false); //source data is closed until clicked
 
-  //show = false loads the report quietly (for the filter dropdowns) without displaying it
+  //call anytime our report changes, when user clicks Apply, and/or clicks enter
   const loadData = async (currentFilters, show = true) => {
     try{
       if (currentFilters.from && currentFilters.to && currentFilters.from > currentFilters.to) {
@@ -94,7 +102,7 @@ const ReportsPage = () => {
       if (!response.ok) throw new Error(data.message);
 
       setRows(data.rows);
-      if (count === 0) setAllRows(data.rows); //no filters = the whole report
+      if (count === 0) setAllRows(data.rows);
       setTitle(data.title);
       setDescription(data.description);
       setSummary(data.summary);
@@ -139,7 +147,8 @@ const ReportsPage = () => {
     setShown(false);
   }
 
-  //how many times each value shows up in a column
+  //how many times each value shows up in a column, e.g. { Dairy: 2, Bakery: 1 }
+  //used for the dropdown options and the autocomplete suggestions in the filters
   const getCounts = (column) => {
     const counts = {};
     allRows.forEach((row) => {
@@ -150,9 +159,11 @@ const ReportsPage = () => {
     return counts;
   }
 
+  //column names come from the first row's keys
   const headers = allRows.length > 0 ? Object.keys(allRows[0]) : [];
   const noMatch = loaded && !message && applied > 0 && rows.length === 0;
 
+  //filter messages
   let status = message;
   if (!message && loaded) {
     if (applied === 0 && rows.length === 0) status = 'No filters applied. This report has no data yet.';
@@ -164,12 +175,14 @@ const ReportsPage = () => {
   if (!shown) status = loaded ? 'Set your filters and click Apply to run the report.' : 'Loading...';
 
   return (
+    
     <section className='report-page border-b border-r'>
+      {/* Title & Description*/}
       <TitleHeader report={title || niceHeader(report)}/>
       <p className='px-10 -mt-6'>{description}</p>
       {shown && <p className='px-10 text-sm text-gray-500'>Generated {new Date().toLocaleString()}</p>}
 
-      {/*filters come first; nothing below them shows until Apply*/}
+      {/* Filters */}
       <div className='no-print flex flex-wrap gap-4 p-4'>
         {(FILTERS[report] || []).map((filter) => {
           const counts = filter.column ? getCounts(filter.column) : {};
@@ -210,7 +223,8 @@ const ReportsPage = () => {
             </div>
           )
         })}
-
+        
+        {/* Filters: Buttons */}
         <button className='button-highlight p-1 border-2 self-end'
           onClick={() => loadData(filters)}
         >
@@ -227,41 +241,46 @@ const ReportsPage = () => {
         >
           Print
         </button>
-      </div>
 
+      </div>
+      
+      {/* Message */}
       {status &&
         <p className={noMatch || (shown && message) ? 'p-4 text-red-600' : 'p-4'}>
           {status}
         </p>
       }
 
+      {/* AFTER APPLY */}
       {shown && (
         <>
-          {/*summary boxes, they change with the filters*/}
+          {/* Summary Boxes */}
           {summary.length > 0 && (
             <div className='flex flex-wrap gap-4 px-4 pb-4'>
-              {summary.map((s) => (
-                <div key={s.label} className='border-2 p-4 min-w-40'>
-                  <p className='text-sm text-gray-500'>{s.label}</p>
-                  <p className='text-2xl'>{s.money ? showMoney(s.value) : s.percent ? showPercent(s.value) : s.value.toLocaleString()}</p>
+              {summary.map((stat) => (
+                <div key={stat.label} className='border-2 p-4 min-w-40'>
+                  <p className='text-sm text-gray-500'>{stat.label}</p>
+                  <p className='text-2xl'>{stat.money ? showMoney(stat.value) : stat.percent ? showPercent(stat.value) : stat.value.toLocaleString()}</p>
                 </div>
               ))}
             </div>
           )}
-
+          
+          {/* Main Data Headers  */}
           <div className='grid'
             style={{ gridTemplateColumns: `repeat(${headers.length || 1}, minmax(0, 1fr))` }}>
-            {headers.map((h) => (
-              <h2 className='border-b font-bold px-3 py-2' key={h}> {niceHeader(h)} </h2>
+            {headers.map((header) => (
+              <h2 className='border-b font-bold px-3 py-2' key={header}> {niceHeader(header)} </h2>
             ))}
           </div>
-
+          
+          {/* Main Data */}
           <div className='flex-1 overflow-y-auto'>
             {rows.map((row, i) => (
               <div key={i} className='grid border-b'
                 style={{ gridTemplateColumns: `repeat(${headers.length || 1}, minmax(0, 1fr))` }}>
-                {headers.map((h) => (
-                  <p key={h} className='px-3 py-2.5'>{showValue(h, row[h])}</p>
+                {headers.map((header) => (
+                  <p key={header} className='px-3 py-2.5'>{showValue(header, row[header])}</p>
                 ))}
               </div>
             ))}
@@ -272,7 +291,7 @@ const ReportsPage = () => {
             <div className='px-4 py-6'>
               <button className='button-highlight p-1 border-2' onClick={() => setShowSources(!showSources)}>
                 {showSources ? '▾ Hide source data' : '▸ Show source data'}
-                {' '}({sources.reduce((n, s) => n + s.rows.length, 0)} records)
+                {' '}({sources.reduce((total, source) => total + source.rows.length, 0)} records)
               </button>
 
               {showSources && sources.map((section) => {
@@ -287,14 +306,14 @@ const ReportsPage = () => {
                     ) : (
                       <>
                         <div className='grid' style={grid}>
-                          {sourceHeaders.map((h) => (
-                            <h3 className='border-b font-bold px-3 py-2' key={h}>{niceHeader(h)}</h3>
+                          {sourceHeaders.map((header) => (
+                            <h3 className='border-b font-bold px-3 py-2' key={header}>{niceHeader(header)}</h3>
                           ))}
                         </div>
-                        {section.rows.map((r, i) => (
+                        {section.rows.map((row, i) => (
                           <div key={i} className='grid border-b' style={grid}>
-                            {sourceHeaders.map((h) => (
-                              <p key={h} className='px-3 py-2.5'>{showValue(h, r[h])}</p>
+                            {sourceHeaders.map((header) => (
+                              <p key={header} className='px-3 py-2.5'>{showValue(header, row[header])}</p>
                             ))}
                           </div>
                         ))}

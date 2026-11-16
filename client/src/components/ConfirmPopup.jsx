@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 
 //our own yes/no popup instead of the browser's window.confirm
 const ConfirmPopup = ({ message, confirmText = 'Yes', cancelText = 'No', onConfirm, onCancel }) => {
-  //Escape = No
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') onCancel(); };
     window.addEventListener('keydown', onKey);
@@ -23,7 +22,7 @@ const ConfirmPopup = ({ message, confirmText = 'Yes', cancelText = 'No', onConfi
 }
 
 //const [popup, ask] = useConfirm();
-//if (!(await ask('Delete this?'))) return;   ...and put {popup} somewhere in the JSX
+//if (!(await ask('Delete this?'))) return;  
 export const useConfirm = () => {
   const [request, setRequest] = useState(null);
 
