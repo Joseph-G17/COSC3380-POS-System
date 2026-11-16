@@ -14,18 +14,18 @@ const TWO_COLUMN_KEYS = {
   'Seasonal Deals': ['SeasonID', 'ItemID']
 };
 
+//EVERYTHING SEEN WHEN INSPECTING ANY ITEM FROM HOME PAGE
 const InspectDescription = ({entity, id, idField}) => { 
-  const navigate = useNavigate();
-  const [inspectedData, setInspectedData] = useState([]);
-  const [columns, setColumns] = useState([]);
-  const [options, setOptions] = useState({});
-  const [formData, setFormData] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState('');
-  const [showHours, setShowHours] = useState(false);
-  const [departments, setDepartments] = useState([]);
-  const [moveTo, setMoveTo] = useState('');
-  const [popup, ask] = useConfirm();
+  const navigate = useNavigate(); 
+  const [inspectedData, setInspectedData] = useState([]);  //the saved record from the db (row[0])
+  const [columns, setColumns] = useState([]); //column info for the table, used to build the form
+  const [options, setOptions] = useState({}); //dropdown choices for foreign key/role columns
+  const [formData, setFormData] = useState({});  //what's currently in the form, compared to the saved record
+  const [loading, setLoading] = useState(true);  //true until the record and columns load
+  const [message, setMessage] = useState(''); //success or error text under the buttons
+  const [departments, setDepartments] = useState([]); //other departments to move employees into (Departments only)
+  const [moveTo, setMoveTo] = useState(''); //the department picked to move employees into before deleting
+  const [popup, ask] = useConfirm();  //popup is the confirm box to render, ask() opens it and waits for yes/no
 
   //deleting a department moves its employees somewhere else first
   useEffect(() => {
@@ -251,7 +251,8 @@ const InspectDescription = ({entity, id, idField}) => {
           {message}
         </p>
       )}
-
+      
+      {/* SHOW CERTAIN COMPONENTS INSPECTING CERTAIN ENTITY */}
       {entity === 'Orders' && <OrderItems orderId={id} />}
       {entity === 'Employees' && <EmployeeLogin employeeId={id} />}
       {entity === 'Employees' && <EmployeeHours employeeId={id} />}

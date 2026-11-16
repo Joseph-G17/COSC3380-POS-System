@@ -9,7 +9,6 @@ import AdminLayout from './layouts/AdminLayout';
 import HomePage from './pages/admin/HomePage';
 import ReportsPage from './pages/admin/ReportsPage';
 import ClockInPage from './pages/admin/ClockInPage';
-import EditProfilePage from './pages/admin/EditProfilePage';
 import InspectDataPage from './pages/admin/InspectDataPage';
 
 

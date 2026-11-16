@@ -1,21 +1,27 @@
-// columns that point at another table, and what to show instead of the id
-const employeeLabel = (r) => r.Name || `${r.FirstName} ${r.LastName}`;
+//columns that hold an id from another table, and what to show instead of the raw id
+//e.g. a form shows "Dairy" in a dropdown instead of DepartmentID = 3
 
+//employees come back either with a name field or with first/last
+const employeeLabel = (row) => row.Name || `${row.FirstName} ${row.LastName}`;
+
+//  entity:  which api route to fetch the other table from (/api/<entity>)
+//  idField: the id column in that table (saved as the dropdown's value)
+//  label:   turns one of its rows into the text shown in the dropdown
 export const FOREIGN_KEYS = {
-  DepartmentID: { entity: 'Departments', idField: 'DepartmentID', label: (r) => r.DepartmentName },
+  DepartmentID: { entity: 'Departments', idField: 'DepartmentID', label: (row) => row.DepartmentName },
   ManagerID: { entity: 'Employees', idField: 'EmployeeID', label: employeeLabel },
   EmployeeID: { entity: 'Employees', idField: 'EmployeeID', label: employeeLabel },
-  CustomerID: { entity: 'Customers', idField: 'CustomerID', label: (r) => `${r.FirstName} ${r.LastName}` },
-  ItemCategoryID: { entity: 'Item Categories', idField: 'ItemCategoryID', label: (r) => r.CategoryName },
-  ItemID: { entity: 'Items', idField: 'ItemID', label: (r) => r.ItemName },
-  InventoryID: { entity: 'Inventory', idField: 'InventoryID', label: (r) => `${r.Item} (${r.Supplier || 'No supplier'})` },
-  OrderID: { entity: 'Orders', idField: 'OrderID', label: (r) => `Order #${r.OrderID} - ${r.Customer} (${r.OrderDate})` },
-  SaleID: { entity: 'Sales', idField: 'SaleID', label: (r) => r.SaleName },
-  SeasonID: { entity: 'Seasons', idField: 'SeasonID', label: (r) => r.SeasonName },
-  DiscountID: { entity: 'Discounts', idField: 'DiscountID', label: (r) => r.Code || r.DiscountCode }
+  CustomerID: { entity: 'Customers', idField: 'CustomerID', label: (row) => `${row.FirstName} ${row.LastName}` },
+  ItemCategoryID: { entity: 'Item Categories', idField: 'ItemCategoryID', label: (row) => row.CategoryName },
+  ItemID: { entity: 'Items', idField: 'ItemID', label: (row) => row.ItemName },
+  InventoryID: { entity: 'Inventory', idField: 'InventoryID', label: (row) => `${row.Item} (${row.Supplier || 'No supplier'})` },
+  OrderID: { entity: 'Orders', idField: 'OrderID', label: (row) => `Order #${row.OrderID} - ${row.Customer} (${row.OrderDate})` },
+  SaleID: { entity: 'Sales', idField: 'SaleID', label: (row) => row.SaleName },
+  SeasonID: { entity: 'Seasons', idField: 'SeasonID', label: (row) => row.SeasonName },
+  DiscountID: { entity: 'Discounts', idField: 'DiscountID', label: (row) => row.Code || row.DiscountCode }
 }
 
-//Role is saved as a number in the db
+//role is saved as a number in the db
 export const ROLES = [
   { value: 0, label: 'Cashier' },
   { value: 1, label: 'Admin' }
@@ -27,6 +33,7 @@ export const getLabel = (field) => field.replace(/ID$/, '').replace(/([a-z])([A-
 //required and gets an astrik
 export const isRequired = (col) => col.Null === 'NO' && col.Default === null && col.Extra !== 'auto_increment';
 
+//builds the dropdown choices for every column that needs one
 //{ DepartmentID: [{value: 1, label: 'Sales'}, ...]} for the columns that need a dropdown
 export const loadOptions = async (columns) => {
   const options = {};
@@ -43,7 +50,7 @@ export const loadOptions = async (columns) => {
       if (!response.ok) throw new Error(rows.message);
 
       options[col.Field] = rows
-        .map((r) => ({ value: r[fk.idField], label: fk.label(r) }))
+        .map((row) => ({ value: row[fk.idField], label: fk.label(row) }))
         .sort((a, b) => String(a.label).localeCompare(String(b.label)));
     } catch(error){
       console.log(error); // no dropdown for this column, it stays a plain box
